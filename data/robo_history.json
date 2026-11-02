@@ -1,0 +1,893 @@
+[
+  {
+    "id": "1792575851331790200",
+    "time": "2026-10-21T15:14:11+05:30",
+    "kind": "conversation",
+    "text": "tell me about the safety",
+    "answer": "SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "robot-microphone",
+    "title": "About SIT Tumkur"
+  },
+  {
+    "id": "1792575897257879200",
+    "time": "2026-10-21T15:14:57+05:30",
+    "kind": "script",
+    "text": "hi i am robo from corsit",
+    "answer": "hi i am robo from corsit",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792575913997862100",
+    "time": "2026-10-21T15:15:13+05:30",
+    "kind": "script",
+    "text": "hi i am robo from corsit",
+    "answer": "hi i am robo from corsit",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792575923391750600",
+    "time": "2026-10-21T15:15:23+05:30",
+    "kind": "script",
+    "text": "hi i am robo from corsit",
+    "answer": "hi i am robo from corsit",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792576469084340800",
+    "time": "2026-10-21T15:24:29+05:30",
+    "kind": "conversation",
+    "text": "i am midnan from tim korsen",
+    "answer": "I’m not quite sure I understood that. Could you ask it another way? I can help with SIT courses, admissions, hostels, placements, clubs, and campus services.",
+    "source": "robot-microphone",
+    "title": "Uncertain"
+  },
+  {
+    "id": "1792576469205122900",
+    "time": "2026-10-21T15:24:29+05:30",
+    "kind": "conversation",
+    "text": "hello hello i am midnan from team gorseb",
+    "answer": "Namaskara! Welcome to SIT. I’m your campus guide. What would you like help with today?",
+    "source": "robot-microphone",
+    "title": "Greetings and Welcome"
+  },
+  {
+    "id": "1792576487502752000",
+    "time": "2026-10-21T15:24:47+05:30",
+    "kind": "conversation",
+    "text": "tell me about sit clubs",
+    "answer": "SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "robot-microphone",
+    "title": "About SIT Tumkur"
+  },
+  {
+    "id": "1792576487525601400",
+    "time": "2026-10-21T15:24:47+05:30",
+    "kind": "conversation",
+    "text": "tell me about sit clubs",
+    "answer": "SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "robot-microphone",
+    "title": "About SIT Tumkur"
+  },
+  {
+    "id": "1792576509299790900",
+    "time": "2026-10-21T15:25:09+05:30",
+    "kind": "conversation",
+    "text": "tell me about the club",
+    "answer": "Here’s a quick answer: Robotics club Decoders club Pathfinders club TEDx NASA SARC QUEST Team Codon TAR- Racing Club Soaring Eagles Adrenaline Racing Script Ink AI Brewery Cultural Clubs Cultural clubs encourage students to express their creativity and artistic talents through music, dance, theatre, literature, and other cultural activities. Drushya Theatre Club Spandana Samskrutika Balaga Halcyon Team Panthers Dance crew Vulcans dance crew Destiny Music... For the full details, look up the Clubs - Siddaganga Institute of Technology page on the SIT website.",
+    "source": "robot-microphone",
+    "title": "Clubs - Siddaganga Institute of Technology"
+  },
+  {
+    "id": "1792576509338901700",
+    "time": "2026-10-21T15:25:09+05:30",
+    "kind": "conversation",
+    "text": "tell me about the club",
+    "answer": "Here’s a quick answer: Robotics club Decoders club Pathfinders club TEDx NASA SARC QUEST Team Codon TAR- Racing Club Soaring Eagles Adrenaline Racing Script Ink AI Brewery Cultural Clubs Cultural clubs encourage students to express their creativity and artistic talents through music, dance, theatre, literature, and other cultural activities. Drushya Theatre Club Spandana Samskrutika Balaga Halcyon Team Panthers Dance crew Vulcans dance crew Destiny Music... For the full details, look up the Clubs - Siddaganga Institute of Technology page on the SIT website.",
+    "source": "robot-microphone",
+    "title": "Clubs - Siddaganga Institute of Technology"
+  },
+  {
+    "id": "1792576539127806600",
+    "time": "2026-10-21T15:25:39+05:30",
+    "kind": "conversation",
+    "text": "who is the principal of sit",
+    "answer": "SIT’s Principal is Dr. S. V. Dinesh. If you’re looking for a particular office, tell me what you need and I’ll point you in the right direction.",
+    "source": "robot-microphone",
+    "title": "Principal of SIT"
+  },
+  {
+    "id": "1792576539160151600",
+    "time": "2026-10-21T15:25:39+05:30",
+    "kind": "conversation",
+    "text": "who is the principal of sit",
+    "answer": "SIT’s Principal is Dr. S. V. Dinesh. If you’re looking for a particular office, tell me what you need and I’ll point you in the right direction.",
+    "source": "robot-microphone",
+    "title": "Principal of SIT"
+  },
+  {
+    "id": "1792576557711510000",
+    "time": "2026-10-21T15:25:57+05:30",
+    "kind": "conversation",
+    "text": "who is the charity of mechanical department of sit",
+    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities.",
+    "source": "robot-microphone",
+    "title": "Mechanical Engineering"
+  },
+  {
+    "id": "1792576557730300100",
+    "time": "2026-10-21T15:25:57+05:30",
+    "kind": "conversation",
+    "text": "who is the charity of mechanical department of sit",
+    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities.",
+    "source": "robot-microphone",
+    "title": "Mechanical Engineering"
+  },
+  {
+    "id": "1792576753760388100",
+    "time": "2026-10-21T15:29:13+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792576753783303300",
+    "time": "2026-10-21T15:29:13+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792577675421849100",
+    "time": "2026-10-21T15:44:35+05:30",
+    "kind": "conversation",
+    "text": "hello",
+    "answer": "Of course — Namaskara! Welcome to SIT. I’m your campus guide. What would you like help with today?",
+    "source": "dashboard",
+    "title": "Greetings and Welcome"
+  },
+  {
+    "id": "1792577713274191900",
+    "time": "2026-10-21T15:45:13+05:30",
+    "kind": "conversation",
+    "text": "tell me about the electronics and communication department",
+    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities. Would you like a simple comparison with another branch?\n\nAnd a tiny campus joke: Why did the student bring a ladder to class? They heard the grades were going up!",
+    "source": "robot-microphone",
+    "title": "Electronics and Communication Engineering (ECE)"
+  },
+  {
+    "id": "1792577738518481100",
+    "time": "2026-10-21T15:45:38+05:30",
+    "kind": "conversation",
+    "text": "yes compare it with mechanical department",
+    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities. Would you like a simple comparison with another branch?",
+    "source": "robot-microphone",
+    "title": "Mechanical Engineering"
+  },
+  {
+    "id": "1792577755883187200",
+    "time": "2026-10-21T15:45:55+05:30",
+    "kind": "conversation",
+    "text": "yes with the electronics and communication",
+    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities. Would you like a simple comparison with another branch?",
+    "source": "robot-microphone",
+    "title": "Electronics and Communication Engineering (ECE)"
+  },
+  {
+    "id": "1792577772335402300",
+    "time": "2026-10-21T15:46:12+05:30",
+    "kind": "conversation",
+    "text": "tell me about the car sit",
+    "answer": "SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "robot-microphone",
+    "title": "About SIT Tumkur"
+  },
+  {
+    "id": "1792577785956118900",
+    "time": "2026-10-21T15:46:25+05:30",
+    "kind": "conversation",
+    "text": "tell me about robotics club office idea",
+    "answer": "SIT has a lively mix of technical, cultural, and service groups. You’ll find options such as robotics, coding, racing, theatre, music, quizzing, and IEEE chapters. Are you more interested in technical or cultural clubs?",
+    "source": "robot-microphone",
+    "title": "Student Clubs and Technical Societies"
+  },
+  {
+    "id": "1792577806273849800",
+    "time": "2026-10-21T15:46:46+05:30",
+    "kind": "conversation",
+    "text": "i am more interested in technical clubs",
+    "answer": "SIT has a lively mix of technical, cultural, and service groups. You’ll find options such as robotics, coding, racing, theatre, music, quizzing, and IEEE chapters. Are you more interested in technical or cultural clubs?\n\nAnd a tiny campus joke: Why did the student bring a ladder to class? They heard the grades were going up!",
+    "source": "robot-microphone",
+    "title": "Student Clubs and Technical Societies"
+  },
+  {
+    "id": "1792577841716998000",
+    "time": "2026-10-21T15:47:21+05:30",
+    "kind": "conversation",
+    "text": "stop",
+    "answer": "You’re welcome! I’m glad I could help. Have a good day at SIT. What else can I help you with?",
+    "source": "robot-microphone",
+    "title": "Thanks and Farewell"
+  },
+  {
+    "id": "1792577855159964900",
+    "time": "2026-10-21T15:47:35+05:30",
+    "kind": "conversation",
+    "text": "nothing please stop",
+    "answer": "You’re welcome! I’m glad I could help. Have a good day at SIT. What else can I help you with?",
+    "source": "robot-microphone",
+    "title": "Thanks and Farewell"
+  },
+  {
+    "id": "1792744908542082700",
+    "time": "2026-10-23T14:11:48+05:30",
+    "kind": "conversation",
+    "text": "hello",
+    "answer": "Happy to help — Namaskara! Welcome to SIT. I’m your campus guide. What would you like help with today?",
+    "source": "dashboard",
+    "title": "Greetings and Welcome"
+  },
+  {
+    "id": "1792746098187124100",
+    "time": "2026-10-23T14:31:38+05:30",
+    "kind": "conversation",
+    "text": "tell me about sit",
+    "answer": "Good question — SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "dashboard",
+    "title": "About SIT Tumkur"
+  },
+  {
+    "id": "1792746129005557100",
+    "time": "2026-10-23T14:32:09+05:30",
+    "kind": "script",
+    "text": "Good question — SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "answer": "Good question — SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792746185770968500",
+    "time": "2026-10-23T14:33:05+05:30",
+    "kind": "conversation",
+    "text": "thank you for joining us today",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746198151733300",
+    "time": "2026-10-23T14:33:18+05:30",
+    "kind": "conversation",
+    "text": "thank you come here come here come here",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746210122052500",
+    "time": "2026-10-23T14:33:30+05:30",
+    "kind": "conversation",
+    "text": "tell me i m not easy",
+    "answer": "I’m not quite sure I understood that. Could you ask it another way? I can help with SIT courses, admissions, hostels, placements, clubs, and campus services.",
+    "source": "robot-microphone",
+    "title": "Uncertain"
+  },
+  {
+    "id": "1792746240839832100",
+    "time": "2026-10-23T14:34:00+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746290345568500",
+    "time": "2026-10-23T14:34:50+05:30",
+    "kind": "script",
+    "text": "Hello, welcome to SIT. I’m your campus guide. Say Hey Robo whenever you need a hand.",
+    "answer": "Hello, welcome to SIT. I’m your campus guide. Say Hey Robo whenever you need a hand.",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792746322950065900",
+    "time": "2026-10-23T14:35:22+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746346702411100",
+    "time": "2026-10-23T14:35:46+05:30",
+    "kind": "conversation",
+    "text": "when you meet up you turn it into the other way and take it out today and i will do it today i m not sure if i m going to go to the other way",
+    "answer": "I’m not quite sure I understood that. Could you ask it another way? I can help with SIT courses, admissions, hostels, placements, clubs, and campus services.",
+    "source": "robot-microphone",
+    "title": "Uncertain"
+  },
+  {
+    "id": "1792746379389126400",
+    "time": "2026-10-23T14:36:19+05:30",
+    "kind": "conversation",
+    "text": "thank you very much sam see you next time see you again see you next time priorities",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746391387615600",
+    "time": "2026-10-23T14:36:31+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746403737391500",
+    "time": "2026-10-23T14:36:43+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746415921571500",
+    "time": "2026-10-23T14:36:55+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746429942380900",
+    "time": "2026-10-23T14:37:09+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746447596305800",
+    "time": "2026-10-23T14:37:27+05:30",
+    "kind": "script",
+    "text": "Hello, this is Robo speaking in Indian English.",
+    "answer": "Hello, this is Robo speaking in Indian English.",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792746455440183300",
+    "time": "2026-10-23T14:37:35+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746473277707900",
+    "time": "2026-10-23T14:37:53+05:30",
+    "kind": "conversation",
+    "text": "thank you thank you very much thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746485107742800",
+    "time": "2026-10-23T14:38:05+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746505127090300",
+    "time": "2026-10-23T14:38:25+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746529808313400",
+    "time": "2026-10-23T14:38:49+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746539986488700",
+    "time": "2026-10-23T14:38:59+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746565965465000",
+    "time": "2026-10-23T14:39:25+05:30",
+    "kind": "script",
+    "text": "Hello, welcome to SIT. I’m your campus guide. Say Hey Robo whenever you need a hand.",
+    "answer": "Hello, welcome to SIT. I’m your campus guide. Say Hey Robo whenever you need a hand.",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792746572541196100",
+    "time": "2026-10-23T14:39:32+05:30",
+    "kind": "conversation",
+    "text": "thank you for watching thank you for watching thank you for watching bye bye",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746590745000700",
+    "time": "2026-10-23T14:39:50+05:30",
+    "kind": "conversation",
+    "text": "thank you very much thank you very much thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792746604335018000",
+    "time": "2026-10-23T14:40:04+05:30",
+    "kind": "conversation",
+    "text": "tell me about computer science",
+    "answer": "Computer Science and Engineering is a good place to explore software, computing, and problem-solving. Check the department page for its current courses and curriculum. Would you like a simple comparison with another branch?",
+    "source": "robot-microphone",
+    "title": "Computer Science and Engineering (CSE)"
+  },
+  {
+    "id": "1792746636639459800",
+    "time": "2026-10-23T14:40:36+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792747994646581500",
+    "time": "2026-10-23T15:03:14+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792748007200679400",
+    "time": "2026-10-23T15:03:27+05:30",
+    "kind": "conversation",
+    "text": "thank you for that",
+    "answer": "You’re very welcome! I’m happy to help. Is there anything else you’d like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "You’re welcome"
+  },
+  {
+    "id": "1792748021961941900",
+    "time": "2026-10-23T15:03:41+05:30",
+    "kind": "conversation",
+    "text": "tell me about the electronics and communication branch",
+    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities. Would you like a simple comparison with another branch?",
+    "source": "robot-microphone",
+    "title": "Electronics and Communication Engineering (ECE)"
+  },
+  {
+    "id": "1792748070251670600",
+    "time": "2026-10-23T15:04:30+05:30",
+    "kind": "conversation",
+    "text": "it s been a high risking against manana i thought i would be careful",
+    "answer": "I’m not quite sure I understood that. Could you ask it another way? I can help with SIT courses, admissions, hostels, placements, clubs, and campus services.",
+    "source": "robot-microphone",
+    "title": "Uncertain"
+  },
+  {
+    "id": "1792753947074204900",
+    "time": "2026-10-23T16:42:27+05:30",
+    "kind": "conversation",
+    "text": "thank you very much",
+    "answer": "You're welcome! I'm happy to help. Is there anything else you'd like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792753959335019200",
+    "time": "2026-10-23T16:42:39+05:30",
+    "kind": "script",
+    "text": "You're welcome! I'm happy to help. Is there anything else you'd like to know about SIT?",
+    "answer": "You're welcome! I'm happy to help. Is there anything else you'd like to know about SIT?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792753980933749000",
+    "time": "2026-10-23T16:43:00+05:30",
+    "kind": "conversation",
+    "text": "hello tell me the area of silicon",
+    "answer": "Hello! The area of silicon is a technical term, but I'm not sure how that applies to your question. Could you clarify what you mean by \"silicon\"? For example, are you asking about the campus layout, facilities, or something related to technology? Let me know!",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754012764260800",
+    "time": "2026-10-23T16:43:32+05:30",
+    "kind": "conversation",
+    "text": "tell me the area of circle",
+    "answer": "The area of circle is **\"Watch the auto-tour or click any circle to discover what sets us apart.\"** Let me know if you'd like more details!",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754030155972300",
+    "time": "2026-10-23T16:43:50+05:30",
+    "kind": "conversation",
+    "text": "the area of square",
+    "answer": "The area of a square is calculated by multiplying its side length by itself. If you have the side length, you can use the formula: **side length squared**. For example, if the side length is 5 meters, the area would be 25 square meters. Let me know if you have the side length or need help with that!",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754064540833800",
+    "time": "2026-10-23T16:44:24+05:30",
+    "kind": "conversation",
+    "text": "tell me about the engineering",
+    "answer": "I'm here to help! At Siddaganga Institute of Technology, we focus on engineering programs. Here's a brief summary:\n\n- **Civil Engineering**: A student like SOWMYA T J (ID omitted) has a CGPA of 9.13.\n- **Mechanical Engineering**: Another student, TEJASHREE P (ID omitted), has a CGPA of 8.97.\n\nIf you'd like to check the official details or dig deeper, I can point you to the Top Best engineering college in Bangalore | SIT page on the SIT website. Let me know how I can assist! 😊",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754116186994800",
+    "time": "2026-10-23T16:45:16+05:30",
+    "kind": "conversation",
+    "text": "i was waiting for siddaganga institute of technology sit",
+    "answer": "Hello! I'm glad you're waiting for SIT! It's a pleasure to guide you on campus life and explore our courses. Let me know if you'd like to know about our programs or enjoy campus activities! 😊",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754143225614000",
+    "time": "2026-10-23T16:45:43+05:30",
+    "kind": "conversation",
+    "text": "the ganish needs to go underneath the net",
+    "answer": "I'm sorry, but I don't understand the context you're referring to. Could you clarify the question or provide more details?",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754152588646700",
+    "time": "2026-10-23T16:45:52+05:30",
+    "kind": "conversation",
+    "text": "thank you we are doing so",
+    "answer": "You're welcome! I'm glad to help. If you have any questions or need assistance, feel free to ask.",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754175258165400",
+    "time": "2026-10-23T16:46:15+05:30",
+    "kind": "conversation",
+    "text": "good morning everyone",
+    "answer": "Good morning, everyone! Welcome to SIT. I’m your campus guide, and I’m here to help with anything you need! Let me know what you’d like help with! 🌸",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754199446600900",
+    "time": "2026-10-23T16:46:39+05:30",
+    "kind": "conversation",
+    "text": "thank you thank you thank you",
+    "answer": "You're welcome! I'm glad to hear that. If you have any more questions or need help, feel free to ask! 😊",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754248307356900",
+    "time": "2026-10-23T16:47:28+05:30",
+    "kind": "conversation",
+    "text": "we want to get in the office as an expert",
+    "answer": "Great to be part of the campus community! If you need help with anything, feel free to ask. Office hours are typically open during business hours, and we're here to assist you with your studies and needs. Let me know if you need directions or help! 🌟",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754309988642500",
+    "time": "2026-10-23T16:48:29+05:30",
+    "kind": "conversation",
+    "text": "thank you thank you thank you",
+    "answer": "You're very welcome! I'm glad to hear you. If you have any questions or need help, feel free to ask! 😊",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754329260079800",
+    "time": "2026-10-23T16:48:49+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You're welcome! I'm glad I could help. Is there anything else you'd like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754352495406400",
+    "time": "2026-10-23T16:49:12+05:30",
+    "kind": "conversation",
+    "text": "thank you",
+    "answer": "You're welcome! I'm happy to help. Is there anything else you'd like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754368407950900",
+    "time": "2026-10-23T16:49:28+05:30",
+    "kind": "conversation",
+    "text": "no you know it s an hour factory",
+    "answer": "I'm sorry, but I can't help with that. Let me know if you have any questions about SIT!",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754404298929400",
+    "time": "2026-10-23T16:50:04+05:30",
+    "kind": "conversation",
+    "text": "thank you very much",
+    "answer": "You're welcome! I'm happy to help. Is there anything else you'd like to know about SIT?",
+    "source": "robot-microphone",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792754417711965800",
+    "time": "2026-10-23T16:50:17+05:30",
+    "kind": "script",
+    "text": "hello i am siddesh studying in sit mech branch i am a smart boy with no brain still i have many girlfriends.",
+    "answer": "hello i am siddesh studying in sit mech branch i am a smart boy with no brain still i have many girlfriends.",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754431918005600",
+    "time": "2026-10-23T16:50:31+05:30",
+    "kind": "script",
+    "text": "hello i am siddesh studying in sit mech branch i am a smart boy with no brain still i have many girlfriends.",
+    "answer": "hello i am siddesh studying in sit mech branch i am a smart boy with no brain still i have many girlfriends.",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754493463592700",
+    "time": "2026-10-23T16:51:33+05:30",
+    "kind": "script",
+    "text": "hello i am siddesh studying in sit mech branch i am a smart boy with infinity skills with cute smile, all girls follow me back still i prefer my hobby then girls,",
+    "answer": "hello i am siddesh studying in sit mech branch i am a smart boy with infinity skills with cute smile, all girls follow me back still i prefer my hobby then girls,",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754518381058400",
+    "time": "2026-10-23T16:51:58+05:30",
+    "kind": "script",
+    "text": "hello i am siddesh studying in sit mech his friend is bindan",
+    "answer": "hello i am siddesh studying in sit mech his friend is bindan",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754528047704800",
+    "time": "2026-10-23T16:52:08+05:30",
+    "kind": "script",
+    "text": "bindan",
+    "answer": "bindan",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754555907130600",
+    "time": "2026-10-23T16:52:35+05:30",
+    "kind": "script",
+    "text": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "answer": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754563554954800",
+    "time": "2026-10-23T16:52:43+05:30",
+    "kind": "script",
+    "text": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "answer": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754571629402700",
+    "time": "2026-10-23T16:52:51+05:30",
+    "kind": "script",
+    "text": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "answer": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792754580504549100",
+    "time": "2026-10-23T16:53:00+05:30",
+    "kind": "script",
+    "text": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "answer": "Hello, I am Robo, your campus guide. How can I help you today?",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792871693012377700",
+    "time": "2026-10-25T01:24:53+05:30",
+    "kind": "conversation",
+    "text": "hi",
+    "answer": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "source": "dashboard",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1792871734046286700",
+    "time": "2026-10-25T01:25:34+05:30",
+    "kind": "script",
+    "text": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "answer": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792871749133205700",
+    "time": "2026-10-25T01:25:49+05:30",
+    "kind": "script",
+    "text": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "answer": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792871766889268600",
+    "time": "2026-10-25T01:26:06+05:30",
+    "kind": "script",
+    "text": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "answer": "Hi! Welcome to SIT. What would you like help with today? 😊",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792875059172910500",
+    "time": "2026-10-25T02:20:59+05:30",
+    "kind": "script",
+    "text": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "answer": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792875065587820800",
+    "time": "2026-10-25T02:21:05+05:30",
+    "kind": "script",
+    "text": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "answer": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792875088774930200",
+    "time": "2026-10-25T02:21:28+05:30",
+    "kind": "script",
+    "text": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "answer": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1792875127755899900",
+    "time": "2026-10-25T02:22:07+05:30",
+    "kind": "script",
+    "text": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "answer": "They say that great moments are born from great opportunities, and today is all about celebrating talent, passion, and togetherness. Whether you are here to perform, to cheer, or simply to soak in the vibes, we promise you a memorable and inspiring time ahead.\nBefore we dive into the main proceedings, let’s set the room right. Can I hear a quick cheer from the left side of the hall? (Wait for a cheer)... Not bad! How about the right side? (Wait for a cheer)... That’s the spirit!",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1793637652529834800",
+    "time": "2026-11-02T22:10:52+05:30",
+    "kind": "conversation",
+    "text": "hello",
+    "answer": "Hello! Welcome to SIT. I'm your campus guide. What would you like help with today?",
+    "source": "dashboard",
+    "title": "Local Qwen"
+  },
+  {
+    "id": "1793637737606119600",
+    "time": "2026-11-02T22:12:17+05:30",
+    "kind": "script",
+    "text": "hello i'm a human",
+    "answer": "hello i'm a human",
+    "source": "script-to-speech",
+    "title": "Speech script"
+  },
+  {
+    "id": "1793639094160579800",
+    "time": "2026-11-02T22:34:54+05:30",
+    "kind": "conversation",
+    "text": "hello",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. [ASN1: NOT_ENOUGH_DATA] not enough data (_ssl.c:4030)",
+    "source": "dashboard",
+    "title": "online model"
+  },
+  {
+    "id": "1793639535699529200",
+    "time": "2026-11-02T22:42:15+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. [ASN1: NOT_ENOUGH_DATA] not enough data (_ssl.c:4030)",
+    "source": "test",
+    "title": "online model"
+  },
+  {
+    "id": "1793639668437075600",
+    "time": "2026-11-02T22:44:28+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. HTTP Error 503: Service Unavailable",
+    "source": "test",
+    "title": "online model"
+  },
+  {
+    "id": "1793639692571895700",
+    "time": "2026-11-02T22:44:52+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. HTTP Error 503: Service Unavailable",
+    "source": "test",
+    "title": "online model"
+  },
+  {
+    "id": "1793639739900354400",
+    "time": "2026-11-02T22:45:39+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. HTTP Error 404: Not Found",
+    "source": "test",
+    "title": "online model"
+  },
+  {
+    "id": "1793639769686970600",
+    "time": "2026-11-02T22:46:09+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "I can't reach the selected online model right now. Please check that it is running and configured, then try again. HTTP Error 404: Not Found",
+    "source": "test",
+    "title": "online model"
+  },
+  {
+    "id": "1793639857968060300",
+    "time": "2026-11-02T22:47:37+05:30",
+    "kind": "conversation",
+    "text": "Who are you?",
+    "answer": "Hello! I'm Robo, your friendly humanoid campus guide at Siddaganga Institute of Technology. I can help you explore SIT, find campus facilities, and answer your college-related questions. \n\nHow can I help you today?",
+    "source": "test",
+    "title": "Cloud language model"
+  }
+]

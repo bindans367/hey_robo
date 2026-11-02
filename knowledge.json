@@ -1,0 +1,1365 @@
+[
+  {
+    "id": "identity",
+    "title": "Robot Identity",
+    "category": "general",
+    "keywords": [
+      "who are you",
+      "what is your name",
+      "your name",
+      "tell me about yourself",
+      "what are you",
+      "who made you",
+      "are you a robot",
+      "humanoid",
+      "assistant",
+      "robot",
+      "sit bot",
+      "campus bot",
+      "sit robot",
+      "who r u",
+      "introduce yourself",
+      "identity",
+      "robot name"
+    ],
+    "answer": "I’m your SIT campus guide. Ask me about courses, admissions, placements, hostels, clubs, or campus services. What can I help you find?"
+  },
+  {
+    "id": "about_sit",
+    "title": "About SIT Tumkur",
+    "category": "overview",
+    "keywords": [
+      "about sit",
+      "about siddaganga",
+      "what is sit",
+      "what is safety",
+      "what is the safety",
+      "tell me about safety",
+      "siddaganga institute of technology",
+      "sit tumkur",
+      "history of sit",
+      "when was sit started",
+      "when was sit established",
+      "when was sit founded",
+      "college history",
+      "autonomous",
+      "accreditation",
+      "naac",
+      "aicte",
+      "vtu affiliated",
+      "campus area",
+      "ranking",
+      "nirf",
+      "grade",
+      "about college",
+      "tell me about sit",
+      "overview of sit"
+    ],
+    "answer": "SIT is an autonomous engineering and technology institute in Tumakuru. It was founded in 1963 and is affiliated with VTU. Would you like to hear about courses or campus life?",
+    "sources": [
+      "https://sit.ac.in/about/"
+    ]
+  },
+  {
+    "id": "founder_swamiji",
+    "title": "Founder - Dr. Sree Sree Shivakumara Swamigalu",
+    "category": "leadership",
+    "keywords": [
+      "founder",
+      "swamiji",
+      "sivakumara",
+      "shivakumara",
+      "walking god",
+      "trividha dasohi",
+      "kayaka yogi",
+      "who founded sit",
+      "who founded siddaganga",
+      "who founded siddaganga mutt",
+      "siddaganga math",
+      "siddaganga mutt",
+      "dr sree sree shivakumara swamigalu",
+      "padma bhushan",
+      "karnataka ratna",
+      "centenarian seer",
+      "who started sit"
+    ],
+    "answer": "SIT was founded by Dr. Sree Sree Shivakumara Swamigalu. He was known for supporting education, food, and shelter through Siddaganga Math. Would you like help finding the right office?"
+  },
+  {
+    "id": "president_swamiji",
+    "title": "President - Sree Sree Siddalinga Swamiji",
+    "category": "leadership",
+    "keywords": [
+      "president",
+      "siddalinga",
+      "siddalinga swamiji",
+      "current swamiji",
+      "head of math",
+      "present president",
+      "sree sree siddalinga swamigalu",
+      "education society president",
+      "who is the president"
+    ],
+    "answer": "The Sree Siddaganga Education Society is guided by Sree Sree Siddalinga Swamigalu, continuing the educational work of the Math. Can I help you find another campus contact?"
+  },
+  {
+    "id": "principal_sit",
+    "title": "Principal of SIT",
+    "category": "leadership",
+    "keywords": [
+      "principal",
+      "principle",
+      "who is the principal",
+      "principal of sit",
+      "who is principal of sit",
+      "principal of sit tumkur",
+      "who is the principal of sit",
+      "principal of sit is",
+      "principle of sit is",
+      "principal of a set",
+      "principle of a set",
+      "principal of sad",
+      "principle of sad",
+      "tell me about our principal",
+      "who is our principal",
+      "principal of our college",
+      "principle of our college",
+      "sit principal",
+      "head of the college",
+      "principal name",
+      "dinesh",
+      "dr s v dinesh",
+      "prof dinesh",
+      "dinesh sir",
+      "current principal",
+      "headmaster",
+      "college head",
+      "who is the principle",
+      "who is principal"
+    ],
+    "answer": "SIT’s Principal is Dr. S. V. Dinesh. If you’re looking for a particular office, tell me what you need and I’ll point you in the right direction."
+  },
+  {
+    "id": "leadership_management",
+    "title": "Director and CEO",
+    "category": "leadership",
+    "keywords": [
+      "director",
+      "ceo",
+      "channabasappa",
+      "dr m n channabasappa",
+      "shivakumaraiah",
+      "joint secretary",
+      "who is the director",
+      "who is the ceo",
+      "college leadership",
+      "who manages sit",
+      "sit management team"
+    ],
+    "answer": "For the latest director and management details, the college office can connect you with the right person. The official contact number is 0816-2214001. Can I help you find another campus contact?"
+  },
+  {
+    "id": "location_address",
+    "title": "Location and Address",
+    "category": "navigation",
+    "keywords": [
+      "where is sit",
+      "location of sit",
+      "address of sit",
+      "where is the college located",
+      "tumkur address",
+      "pincode",
+      "b h road",
+      "tumakuru location",
+      "sit address",
+      "which district",
+      "landmark of sit"
+    ],
+    "answer": "We’re on Dr. Sree Sree Sivakumara Swamiji Road in Tumakuru, Karnataka, PIN 572103. I can help you find the map or contact details too.",
+    "sources": [
+      "https://sit.ac.in/contact-us/"
+    ]
+  },
+  {
+    "id": "how_to_reach",
+    "title": "How to Reach SIT",
+    "category": "navigation",
+    "keywords": [
+      "how to reach",
+      "how to go to sit",
+      "route to sit",
+      "railway station to sit",
+      "bus stand to sit",
+      "distance from bangalore",
+      "nearest airport",
+      "directions to sit",
+      "travel to sit",
+      "how to visit sit",
+      "tumkur railway station"
+    ],
+    "answer": "SIT is in Tumakuru on Dr. Sree Sree Sivakumara Swamiji Road. Open the Contact Us page on the SIT website for a map and directions from where you are. Would directions or contact details help?",
+    "sources": [
+      "https://sit.ac.in/contact-us/"
+    ]
+  },
+  {
+    "id": "contact_details",
+    "title": "Contact Information and Website",
+    "category": "navigation",
+    "keywords": [
+      "contact",
+      "phone number",
+      "email of sit",
+      "office number",
+      "website of sit",
+      "enquiry number",
+      "how to contact sit",
+      "principal email",
+      "reception number",
+      "helpline"
+    ],
+    "answer": "You can reach the admissions office on 0816-2282696, 0816-2214001, or 0816-2214002. The main email is principal@sit.ac.in. Want help finding your way around campus?",
+    "sources": [
+      "https://sit.ac.in/contact-us/"
+    ]
+  },
+  {
+    "id": "admissions_kcet_comedk",
+    "title": "Engineering Admissions (KCET & COMEDK)",
+    "category": "admissions",
+    "keywords": [
+      "admission",
+      "admissions",
+      "kcet",
+      "kcet code",
+      "comedk",
+      "comedk code",
+      "sit kcet code",
+      "sit comedk code",
+      "e016",
+      "e125",
+      "college code for sit",
+      "how to get admission",
+      "eligibility for engineering",
+      "joining sit",
+      "b tech admission",
+      "b e admission",
+      "engineering admission",
+      "cutoff rank",
+      "cut off rank",
+      "kcet cutoff rank"
+    ],
+    "answer": "For undergraduate admission, SIT lists KCET code E016 and COMEDK code E125. Cutoffs and seat availability change each year, so check the current admission notice. Are you applying through KCET or COMEDK?",
+    "sources": [
+      "https://sit.ac.in/",
+      "https://sit.ac.in/admission/",
+      "https://sit.ac.in/doc-required/"
+    ]
+  },
+  {
+    "id": "admissions_management_quota",
+    "title": "Management Quota Admissions",
+    "category": "admissions",
+    "keywords": [
+      "management quota",
+      "management seat",
+      "direct admission",
+      "management quota seat",
+      "management admission",
+      "direct seat",
+      "how to get management seat",
+      "management fees"
+    ],
+    "answer": "Management-category seats depend on the course and current admission cycle. Call the admissions office on 0816-2282696 and ask about the course you want; they can confirm the current process and fees. Tell me what you plan to study and I’ll help with the next step.",
+    "sources": [
+      "https://sit.ac.in/admission/"
+    ]
+  },
+  {
+    "id": "admissions_pg_mba_mca_mtech",
+    "title": "PG Admissions (M.Tech, MBA, MCA)",
+    "category": "admissions",
+    "keywords": [
+      "pg admission",
+      "mtech admission",
+      "mba admission",
+      "mca admission",
+      "pgcet",
+      "gate",
+      "kmat",
+      "post graduate admission",
+      "m tech admission"
+    ],
+    "answer": "For M.Tech, MBA, or MCA, the entrance route depends on the course and admission category. Tell me which programme you’re interested in, and I can help you find the right admissions page."
+  },
+  {
+    "id": "fees_and_scholarships",
+    "title": "Fees and Scholarships",
+    "category": "admissions",
+    "keywords": [
+      "fees",
+      "fee structure",
+      "how much fee",
+      "college fees",
+      "scholarship",
+      "scholarships",
+      "ssp scholarship",
+      "nsp scholarship",
+      "vidyasiri",
+      "fee concession",
+      "pay fees",
+      "tuition fee"
+    ],
+    "answer": "SIT lists government, institute, donor, and merit scholarships. The amounts and eligibility vary, so the Accounts Office can help you find the ones that fit your situation. For current fees, please check with Admissions. Tell me what you plan to study and I’ll help with the next step.",
+    "sources": [
+      "https://sit.ac.in/scholarship/",
+      "https://sit.ac.in/admission/"
+    ]
+  },
+  {
+    "id": "placements_overview",
+    "title": "Placements and Training Overview",
+    "category": "placements",
+    "keywords": [
+      "placement",
+      "placements",
+      "campus placement",
+      "training and placement",
+      "placement cell",
+      "jobs",
+      "job offers",
+      "placement record",
+      "how is placement",
+      "placement of our college",
+      "tell me the placement of our college",
+      "tell me about placement of our college",
+      "placements at our college",
+      "placements in sit",
+      "placement department",
+      "campus recruitment"
+    ],
+    "answer": "SIT’s Training and Placements team helps students prepare for jobs through training, mentoring, and employer connections. The figures change by graduating batch, so I can also share the latest published results.",
+    "sources": [
+      "https://sit.ac.in/sit-placements/"
+    ]
+  },
+  {
+    "id": "placements_statistics",
+    "title": "Placement Packages and Statistics",
+    "category": "placements",
+    "keywords": [
+      "highest package",
+      "average package",
+      "package",
+      "salary",
+      "packages",
+      "highest salary",
+      "average salary",
+      "lpa",
+      "placement statistics",
+      "max package",
+      "placement package",
+      "how much package",
+      "highest package in cse",
+      "highest package in placement"
+    ],
+    "answer": "For the 2024–25 batch, SIT reports an average package of 9 lakh rupees per year and a highest package of 32.88 lakh. Those figures are for that batch; newer results may change. Would you like help finding the latest placement update?",
+    "sources": [
+      "https://sit.ac.in/sit-placements/"
+    ]
+  },
+  {
+    "id": "top_recruiters",
+    "title": "Top Recruiting Companies",
+    "category": "placements",
+    "keywords": [
+      "recruiters",
+      "recruiting companies",
+      "top companies",
+      "which companies visit",
+      "amazon",
+      "cisco",
+      "tcs",
+      "infosys",
+      "wipro",
+      "mercedes",
+      "jp morgan",
+      "target",
+      "hiring companies"
+    ],
+    "answer": "Companies visiting SIT can change from year to year. The placement office publishes the current recruiter list, and I can tell you about the latest batch results too. Would you like help finding the latest placement update?",
+    "sources": [
+      "https://sit.ac.in/sit-placements/"
+    ]
+  },
+  {
+    "id": "hostel_boys",
+    "title": "Boys Hostel Facilities",
+    "category": "hostel",
+    "keywords": [
+      "boys hostel",
+      "boy hostel",
+      "gents hostel",
+      "boys stay",
+      "boys accommodation",
+      "boys rooms",
+      "diamond jubilee hostel",
+      "hostel for boys",
+      "how many boys hostel"
+    ],
+    "answer": "SIT has separate boys’ and girls’ hostels, with rooms, a vegetarian mess, Wi-Fi, study areas, and wardens. Ask the hostel office about current room availability and fees. Is there another hostel detail you’d like to check?",
+    "sources": [
+      "https://sit.ac.in/hostel/"
+    ]
+  },
+  {
+    "id": "hostel_girls",
+    "title": "Girls Hostel Facilities",
+    "category": "hostel",
+    "keywords": [
+      "girls hostel",
+      "girl hostel",
+      "ladies hostel",
+      "girls stay",
+      "girls accommodation",
+      "hostel for girls",
+      "girls security",
+      "women hostel"
+    ],
+    "answer": "SIT has separate girls’ hostel accommodation with a mess, Wi-Fi, study areas, recreation spaces, and wardens. The hostel office can confirm current availability and rules. Is there another hostel detail you’d like to check?",
+    "sources": [
+      "https://sit.ac.in/hostel/"
+    ]
+  },
+  {
+    "id": "hostel_mess_food",
+    "title": "Hostel Mess and Dining",
+    "category": "hostel",
+    "keywords": [
+      "hostel food",
+      "mess",
+      "hostel mess",
+      "food in hostel",
+      "vegetarian food",
+      "is non veg allowed",
+      "hostel meals",
+      "hostel dining",
+      "boy hostel mess",
+      "girls hostel mess"
+    ],
+    "answer": "The hostel mess serves vegetarian meals. If you’re staying in the hostel, the warden can tell you the current menu and meal timings. Is there another hostel detail you’d like to check?"
+  },
+  {
+    "id": "hostel_timings_rules",
+    "title": "Hostel Timings and Discipline",
+    "category": "hostel",
+    "keywords": [
+      "hostel timing",
+      "hostel timings",
+      "in time",
+      "curfew",
+      "gate time for hostel",
+      "hostel rules",
+      "night out",
+      "permission for hostel",
+      "gate pass"
+    ],
+    "answer": "Hostel entry and leave rules can depend on the hostel and current policy. Before planning a late return or overnight leave, please check with your warden. Is there another hostel detail you’d like to check?"
+  },
+  {
+    "id": "central_library",
+    "title": "Central Library",
+    "category": "facilities",
+    "keywords": [
+      "library",
+      "central library",
+      "books in library",
+      "reading room",
+      "library timings",
+      "digital library",
+      "ieee xplore",
+      "how many books",
+      "delnet",
+      "journals",
+      "library open"
+    ],
+    "answer": "The Central Library has books, reading spaces, book-bank services, and online learning resources. Its hours can change during exams, so check the library page for today’s timings. Would you like help finding another campus service?",
+    "sources": [
+      "https://sit.ac.in/library/"
+    ]
+  },
+  {
+    "id": "birla_auditorium",
+    "title": "Birla Auditorium",
+    "category": "facilities",
+    "keywords": [
+      "birla auditorium",
+      "auditorium",
+      "birla audi",
+      "audi in sit",
+      "air conditioned auditorium",
+      "where is auditorium",
+      "convocation hall",
+      "seminar hall"
+    ],
+    "answer": "Birla Auditorium is one of the main venues for college events, talks, and large gatherings. If you’re going to a particular programme, check its notice for the venue and time. What else would make your visit to campus easier?"
+  },
+  {
+    "id": "gandhi_bhavan",
+    "title": "Gandhi Bhavan",
+    "category": "facilities",
+    "keywords": [
+      "gandhi bhavan",
+      "gandhi hall",
+      "where is gandhi bhavan",
+      "multipurpose hall"
+    ],
+    "answer": "Gandhi Bhavan is a campus venue used for talks, gatherings, and student activities. Check the event notice to confirm where your programme is being held. What else would make your visit to campus easier?"
+  },
+  {
+    "id": "canteen_and_cafeteria",
+    "title": "Canteen and Food Courts",
+    "category": "facilities",
+    "keywords": [
+      "canteen",
+      "cafeteria",
+      "food court",
+      "hotel in sit",
+      "snacks in college",
+      "coffee",
+      "tea",
+      "where can i eat",
+      "canteen food",
+      "nescafe kiosk"
+    ],
+    "answer": "There are food and refreshment options on campus. The campus page has the current facilities; ask a student or staff member nearby for the closest one. Would you like help finding another campus service?"
+  },
+  {
+    "id": "health_centre",
+    "title": "Health Centre and Medical Emergency",
+    "category": "facilities",
+    "keywords": [
+      "health centre",
+      "hospital",
+      "clinic",
+      "medical facility",
+      "doctor on campus",
+      "dispensary",
+      "first aid",
+      "ambulance",
+      "emergency medical",
+      "sick in college"
+    ],
+    "answer": "If you’re feeling unwell, the campus Health Centre offers basic medical care and referrals. It lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. You can call 0816-2214075 before going. What else would make your visit to campus easier?",
+    "sources": [
+      "https://sit.ac.in/health-centre/"
+    ]
+  },
+  {
+    "id": "bank_atm_post",
+    "title": "Bank, ATM and Post Office",
+    "category": "facilities",
+    "keywords": [
+      "bank",
+      "canara bank",
+      "atm",
+      "cash machine",
+      "post office",
+      "is there an atm",
+      "banking on campus",
+      "postal service on campus"
+    ],
+    "answer": "The campus has a co-operative society and a post office. For the nearest ATM or banking service, check the campus map or ask at the main office. What else would make your visit to campus easier?"
+  },
+  {
+    "id": "sports_and_gym",
+    "title": "Sports, Stadium and Gymnasium",
+    "category": "facilities",
+    "keywords": [
+      "sports",
+      "ground",
+      "playground",
+      "gym",
+      "gymnasium",
+      "cricket ground",
+      "football ground",
+      "badminton court",
+      "tennis court",
+      "basketball court",
+      "fitness centre"
+    ],
+    "answer": "SIT has sports facilities, a gym, and recreation activities. The Sports page has current details; tell me which sport you’re looking for and I can help narrow it down."
+  },
+  {
+    "id": "cse_department",
+    "title": "Computer Science and Engineering (CSE)",
+    "category": "academics",
+    "keywords": [
+      "cse",
+      "computer science",
+      "cs branch",
+      "cse department",
+      "cse hod",
+      "labs in cse",
+      "computer science and engineering"
+    ],
+    "answer": "Computer Science and Engineering is a good place to explore software, computing, and problem-solving. Check the department page for its current courses and curriculum. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "ise_department",
+    "title": "Information Science and Engineering (ISE)",
+    "category": "academics",
+    "keywords": [
+      "ise",
+      "information science",
+      "is branch",
+      "ise department",
+      "info sci branch",
+      "information science and engineering"
+    ],
+    "answer": "Information Science and Engineering focuses on computing and information systems. If you’re comparing it with CSE, I can help explain the difference in simple terms."
+  },
+  {
+    "id": "aiml_department",
+    "title": "Artificial Intelligence & Machine Learning (AI & ML)",
+    "category": "academics",
+    "keywords": [
+      "aiml",
+      "ai ml",
+      "ai and ml",
+      "artificial intelligence branch",
+      "machine learning branch",
+      "aiml branch",
+      "aiml department",
+      "ai branch"
+    ],
+    "answer": "Artificial Intelligence and Machine Learning focuses on how computers learn from data and solve problems such as language or image recognition. The department page has SIT’s current course details. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "aids_department",
+    "title": "Artificial Intelligence & Data Science (AI & DS)",
+    "category": "academics",
+    "keywords": [
+      "aids",
+      "ai ds",
+      "ai and ds",
+      "data science branch",
+      "aids department",
+      "big data branch"
+    ],
+    "answer": "Artificial Intelligence and Data Science brings together computing, statistics, and working with data. Check the department page for current subjects and programme details. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "ece_department",
+    "title": "Electronics and Communication Engineering (ECE)",
+    "category": "academics",
+    "keywords": [
+      "ece",
+      "electronics",
+      "ec branch",
+      "ece department",
+      "vlsi lab",
+      "embedded systems",
+      "electronics and communication"
+    ],
+    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "eee_department",
+    "title": "Electrical and Electronics Engineering (EEE)",
+    "category": "academics",
+    "keywords": [
+      "eee",
+      "electrical",
+      "triple e",
+      "eee department",
+      "electrical engineering",
+      "power systems",
+      "electric vehicle"
+    ],
+    "answer": "Electrical and Electronics Engineering covers electrical systems, electronics, and areas such as energy and control. The department page has the current course details. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "ete_department",
+    "title": "Electronics and Telecommunication Engineering (ETE)",
+    "category": "academics",
+    "keywords": [
+      "ete",
+      "telecom",
+      "telecommunication",
+      "ete department",
+      "5g lab",
+      "microwave lab",
+      "optical communication"
+    ],
+    "answer": "Electronics and Telecommunication Engineering focuses on communication technologies and electronic systems. You can find the current subjects on its department page. Tell me what subjects you enjoy and I’ll help you explore further."
+  },
+  {
+    "id": "mech_department",
+    "title": "Mechanical Engineering",
+    "category": "academics",
+    "keywords": [
+      "mech",
+      "mechanical",
+      "mechanical engineering",
+      "mech department",
+      "cad cam lab",
+      "robotics in mech",
+      "workshop in sit",
+      "thermodynamics"
+    ],
+    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "civil_department",
+    "title": "Civil Engineering",
+    "category": "academics",
+    "keywords": [
+      "civil",
+      "civil engineering",
+      "civil department",
+      "structural engineering",
+      "surveying in sit",
+      "concrete lab",
+      "geotechnical"
+    ],
+    "answer": "Civil Engineering focuses on the built environment, including structures, roads, water, and construction. The department page has SIT’s current course details. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "chem_department",
+    "title": "Chemical Engineering",
+    "category": "academics",
+    "keywords": [
+      "chemical",
+      "chemical engineering",
+      "chem branch",
+      "chemical department",
+      "process engineering",
+      "reaction engineering"
+    ],
+    "answer": "Chemical Engineering applies engineering to making and processing materials and products. Check the department page for current subjects, labs, and programme details. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "biotech_department",
+    "title": "Biotechnology Department",
+    "category": "academics",
+    "keywords": [
+      "biotech",
+      "biotechnology",
+      "bt branch",
+      "biotechnology department",
+      "genetic engineering in sit",
+      "fermentation lab"
+    ],
+    "answer": "Biotechnology combines biology with technology and engineering. The department page is the best place to see SIT’s current subjects and research areas. Tell me what subjects you enjoy and I’ll help you explore further."
+  },
+  {
+    "id": "iem_department",
+    "title": "Industrial Engineering and Management (IEM)",
+    "category": "academics",
+    "keywords": [
+      "iem",
+      "industrial engineering",
+      "industrial engineering and management",
+      "supply chain management",
+      "operations research"
+    ],
+    "answer": "Industrial Engineering and Management looks at how to make systems, services, and workplaces work better. It combines engineering with planning and management. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "architecture_department",
+    "title": "Department of Architecture (B.Arch)",
+    "category": "academics",
+    "keywords": [
+      "architecture",
+      "barch",
+      "b arch",
+      "architecture department",
+      "design studio in sit",
+      "council of architecture",
+      "5 year architecture course"
+    ],
+    "answer": "SIT offers a five-year Bachelor of Architecture programme. It combines design, buildings, technology, and the way people use spaces. Would you like a simple comparison with another branch?"
+  },
+  {
+    "id": "mba_mca_departments",
+    "title": "MBA and MCA Programs",
+    "category": "academics",
+    "keywords": [
+      "mba",
+      "mca",
+      "master of business administration",
+      "master of computer applications",
+      "mba department",
+      "mca department",
+      "management studies"
+    ],
+    "answer": "SIT offers MBA and MCA programmes. MBA focuses on business and management; MCA focuses on computing and applications. Tell me which one you’re considering and I’ll guide you to its course page."
+  },
+  {
+    "id": "autonomous_academic_system",
+    "title": "Autonomous Credit System",
+    "category": "regulations",
+    "keywords": [
+      "autonomous",
+      "credit system",
+      "cbcs",
+      "how many credits",
+      "curriculum of sit",
+      "vtu autonomous",
+      "academic regulations",
+      "syllabus of sit"
+    ],
+    "answer": "SIT is autonomous, so it publishes its own programme curricula and academic rules while remaining affiliated with VTU. The Academic Procedure page has the current documents. Want help checking which rule applies to your course and batch?"
+  },
+  {
+    "id": "cie_and_see_exams",
+    "title": "Internal (CIE) and Semester (SEE) Exams",
+    "category": "regulations",
+    "keywords": [
+      "cie",
+      "see",
+      "exams",
+      "internals",
+      "internal test",
+      "semester exam",
+      "end exam",
+      "coe",
+      "controller of examinations",
+      "exam marks",
+      "cie marks"
+    ],
+    "answer": "CIE means your internal assessment, and SEE is the semester-end exam. The exact marks and eligibility rules depend on your course and batch, so check your current regulations or ask your department. Want help checking which rule applies to your course and batch?",
+    "sources": [
+      "https://sit.ac.in/academic-procedure/",
+      "https://sit.ac.in/controller-of-examinations/"
+    ]
+  },
+  {
+    "id": "attendance_rules",
+    "title": "Attendance Requirement (85% Rule)",
+    "category": "regulations",
+    "keywords": [
+      "attendance",
+      "attendance rule",
+      "minimum attendance",
+      "attendance percentage",
+      "condonation",
+      "shortage of attendance",
+      "75 percent attendance",
+      "85 percent attendance"
+    ],
+    "answer": "SIT’s current guideline says students need at least 85% attendance in each subject to be eligible for semester exams. It also lists an IA requirement. Check your batch’s rules or ask your department if you’re unsure. Would you like help finding the right academic document?",
+    "sources": [
+      "https://sit.ac.in/attendance/",
+      "https://sit.ac.in/academic-procedure/"
+    ]
+  },
+  {
+    "id": "grading_system_cgpa",
+    "title": "Grading System, SGPA, and CGPA",
+    "category": "regulations",
+    "keywords": [
+      "grading",
+      "sgpa",
+      "cgpa",
+      "grade points",
+      "distinction",
+      "first class",
+      "how is cgpa calculated",
+      "10 point scale",
+      "grading system"
+    ],
+    "answer": "SGPA is your grade-point average for one semester; CGPA combines your results across semesters. The exact grading rules are in the regulations for your programme and batch. Want help checking which rule applies to your course and batch?"
+  },
+  {
+    "id": "halcyon_fest",
+    "title": "Halcyon - Annual Cultural Fest",
+    "category": "events",
+    "keywords": [
+      "halcyon",
+      "fest",
+      "cultural fest",
+      "annual fest",
+      "college fest",
+      "halcyon fest",
+      "when is halcyon",
+      "celebrity night",
+      "pro night",
+      "dance competition"
+    ],
+    "answer": "Halcyon is one of SIT’s student cultural festivals, with performances and activities. The dates and programme change each year, so look out for the current campus announcement. Want to hear about another student event?"
+  },
+  {
+    "id": "sit_expo_tech_fest",
+    "title": "SIT Expo and Technical Fests",
+    "category": "events",
+    "keywords": [
+      "sit expo",
+      "expo",
+      "tech fest",
+      "project exhibition",
+      "final year project",
+      "innovation exhibition",
+      "science fest",
+      "technical events"
+    ],
+    "answer": "SIT Expo gives students a chance to present projects and ideas. Check the current college notices for this year’s date, venue, and participation details. Want to hear about another student event?"
+  },
+  {
+    "id": "clubs_and_societies",
+    "title": "Student Clubs and Technical Societies",
+    "category": "activities",
+    "keywords": [
+      "clubs",
+      "student clubs",
+      "ieee",
+      "csi",
+      "robocore",
+      "robotics club",
+      "rotaract",
+      "spic macay",
+      "coding club",
+      "sae baja",
+      "technical clubs in sit",
+      "tell me about the club",
+      "tell me about clubs",
+      "what clubs are there",
+      "what clubs does sit have",
+      "student activities",
+      "clubs in college",
+      "college clubs",
+      "club activities"
+    ],
+    "answer": "SIT has a lively mix of technical, cultural, and service groups. You’ll find options such as robotics, coding, racing, theatre, music, quizzing, and IEEE chapters. Are you more interested in technical or cultural clubs?",
+    "sources": [
+      "https://sit.ac.in/clubs/",
+      "https://sit.ac.in/campus/"
+    ]
+  },
+  {
+    "id": "ncc_and_nss",
+    "title": "NCC and NSS Units",
+    "category": "activities",
+    "keywords": [
+      "ncc",
+      "nss",
+      "cadet",
+      "national cadet corps",
+      "national service scheme",
+      "social service",
+      "blood donation",
+      "air wing",
+      "army wing"
+    ],
+    "answer": "NCC gives students a chance to take part in structured cadet training, while NSS focuses on community service. Ask the campus coordinators about joining and this year’s activities. Is there a club or activity you’re curious about?"
+  },
+  {
+    "id": "incubation_tbi_idea_lab",
+    "title": "Startup Incubation (TBI) and AICTE IDEA Lab",
+    "category": "facilities",
+    "keywords": [
+      "tbi",
+      "incubation",
+      "startups in sit",
+      "idea lab",
+      "aicte idea lab",
+      "entrepreneurship",
+      "patent",
+      "research lab in sit",
+      "maker space",
+      "innovation in sit"
+    ],
+    "answer": "SIT has facilities to help students explore ideas and build prototypes, including an IDEA Lab and incubation support. If you have a project in mind, ask the relevant centre how students can get started. What else would make your visit to campus easier?"
+  },
+  {
+    "id": "anti_ragging_policy",
+    "title": "Anti-Ragging and Student Safety",
+    "category": "regulations",
+    "keywords": [
+      "anti ragging",
+      "ragging",
+      "is ragging allowed",
+      "ragging complaint",
+      "student safety",
+      "grievance",
+      "zero tolerance ragging"
+    ],
+    "answer": "If you’re worried about ragging or feel unsafe, tell a trusted faculty member or contact SIT’s Anti-Ragging Officer right away. The college lists the officer and contact details on its website. Would you like help finding the right academic document?"
+  },
+  {
+    "id": "college_timings_dress_code",
+    "title": "College Timings and Dress Code",
+    "category": "regulations",
+    "keywords": [
+      "college timings",
+      "timings of sit",
+      "college time",
+      "what time does college start",
+      "closing time of sit",
+      "dress code in sit",
+      "uniform in sit",
+      "id card rule"
+    ],
+    "answer": "Class times can differ by programme and semester. Please check your timetable or ask your department for today’s schedule; the Academic Calendar page lists important semester dates. Would you like help finding the right academic document?"
+  },
+  {
+    "id": "wifi_and_internet",
+    "title": "Campus Wi-Fi and Internet",
+    "category": "facilities",
+    "keywords": [
+      "wifi",
+      "wi fi",
+      "internet in campus",
+      "campus wifi",
+      "hostel wifi",
+      "is wifi available",
+      "broadband in sit"
+    ],
+    "answer": "SIT provides campus and hostel internet access for learning. If you’re having trouble connecting, ask your department or the campus IT support team for the current login steps. Would you like help finding another campus service?"
+  },
+  {
+    "id": "green_initiatives",
+    "title": "Green Initiatives and Sustainability",
+    "category": "overview",
+    "keywords": [
+      "green campus",
+      "solar power in sit",
+      "rainwater harvesting in sit",
+      "clean campus",
+      "environmental sustainability",
+      "eco friendly sit"
+    ],
+    "answer": "SIT highlights campus sustainability efforts, including solar power and rainwater harvesting. The Green Initiatives page has more about the projects currently in place. What else about SIT would you like to know?"
+  },
+  {
+    "id": "greetings",
+    "title": "Greetings and Welcome",
+    "category": "conversation",
+    "keywords": [
+      "hello",
+      "hi",
+      "hey",
+      "good morning",
+      "good afternoon",
+      "good evening",
+      "namaskara",
+      "namaste",
+      "vanakkam",
+      "what's up",
+      "how are you"
+    ],
+    "answer": "Namaskara! Welcome to SIT. I’m your campus guide. What would you like help with today?"
+  },
+  {
+    "id": "audio_check",
+    "title": "Microphone Check",
+    "category": "conversation",
+    "keywords": [
+      "can you hear me",
+      "do you hear me",
+      "are you listening",
+      "can you hear my voice",
+      "is my microphone working",
+      "mic check",
+      "testing microphone",
+      "hello robo can you hear me"
+    ],
+    "answer": "Yes, I can hear you. Go ahead and ask me about SIT, or say “Robo stop” when you’re ready to finish."
+  },
+  {
+    "id": "thanks_and_bye",
+    "title": "Thanks and Farewell",
+    "category": "conversation",
+    "keywords": [
+      "thank you",
+      "thanks",
+      "thank u",
+      "bye",
+      "goodbye",
+      "see you",
+      "exit",
+      "quit",
+      "stop",
+      "dhanyavada",
+      "thanks a lot"
+    ],
+    "answer": "You’re welcome! I’m glad I could help. Have a good day at SIT. What else can I help you with?"
+  },
+  {
+    "id": "help_capabilities",
+    "title": "What Can You Ask",
+    "category": "conversation",
+    "keywords": [
+      "help",
+      "what can you do",
+      "what can i ask",
+      "topics",
+      "options",
+      "menu",
+      "guide",
+      "commands",
+      "how to use"
+    ],
+    "answer": "I can help with admissions, courses, departments, placements, hostels, the library, clubs, and campus services. Ask me a question the way you’d ask a campus guide."
+  },
+  {
+    "id": "academic_calendar",
+    "title": "Academic Calendar and Semester Dates",
+    "category": "academics",
+    "keywords": [
+      "academic calendar",
+      "semester calendar",
+      "college calendar",
+      "semester dates",
+      "first semester dates",
+      "exam dates",
+      "holiday list",
+      "class commencement",
+      "academic year calendar",
+      "2025 26 calendar"
+    ],
+    "answer": "The calendar depends on your programme and semester. Open SIT’s Academic Procedure page and choose your course and semester to see the right dates. Would you like a simple comparison with another branch?",
+    "sources": [
+      "https://sit.ac.in/academic-procedure/"
+    ]
+  },
+  {
+    "id": "academic_rules_source",
+    "title": "Where to Find Academic Rules",
+    "category": "regulations",
+    "keywords": [
+      "rules and regulations",
+      "academic rules",
+      "college rules",
+      "student rules",
+      "regulation pdf",
+      "attendance rules pdf",
+      "exam rules",
+      "discipline rules",
+      "academic procedure"
+    ],
+    "answer": "Academic rules depend on your programme and batch. SIT’s Academic Procedure page links the calendars and rules; if you tell me your course, I can help you find the right section.",
+    "sources": [
+      "https://sit.ac.in/academic-procedure/"
+    ]
+  },
+  {
+    "id": "departments_and_programs",
+    "title": "Departments and Programs at SIT",
+    "category": "academics",
+    "keywords": [
+      "departments",
+      "all branches",
+      "all courses",
+      "what branches are available",
+      "engineering branches",
+      "courses offered",
+      "programs offered",
+      "ug courses",
+      "pg courses",
+      "list of departments"
+    ],
+    "answer": "SIT has programmes in engineering, architecture, management, and computer applications. Tell me what subjects you enjoy, and I can help you find departments that may suit you.",
+    "sources": [
+      "https://sit.ac.in/department/",
+      "https://sit.ac.in/about/"
+    ]
+  },
+  {
+    "id": "research_centres",
+    "title": "Research and Centres of Excellence",
+    "category": "research",
+    "keywords": [
+      "research at sit",
+      "research centers",
+      "centres of excellence",
+      "coe",
+      "innovation labs",
+      "research facilities",
+      "phd research",
+      "patents",
+      "funded projects"
+    ],
+    "answer": "Students and faculty can explore research through SIT’s departments and specialist centres. The Research and Industry page gives an overview; ask me about a particular area if you have one in mind.",
+    "sources": [
+      "https://sit.ac.in/research-and-industry/",
+      "https://sit.ac.in/coes/"
+    ]
+  },
+  {
+    "id": "campus_facilities",
+    "title": "Campus Facilities and Student Services",
+    "category": "facilities",
+    "keywords": [
+      "campus facilities",
+      "student services",
+      "facilities in sit",
+      "campus services",
+      "post office",
+      "cooperative society",
+      "printing shop",
+      "refreshment",
+      "banking",
+      "campus life"
+    ],
+    "answer": "On campus you’ll find student clubs, sports, a gym, a health centre, a post office, and other everyday services. What are you looking for? I can help you narrow it down.",
+    "sources": [
+      "https://sit.ac.in/campus/",
+      "https://sit.ac.in/students/"
+    ]
+  },
+  {
+    "id": "admission_documents",
+    "title": "Documents Needed for Admission",
+    "category": "admissions",
+    "keywords": [
+      "admission documents",
+      "documents required",
+      "what documents for admission",
+      "kcet admission documents",
+      "comedk admission documents",
+      "admission certificate",
+      "documents for be admission",
+      "joining documents"
+    ],
+    "answer": "The documents you need depend on your course and admission route. SIT has separate checklists for each one; tell me your programme and route, and I’ll point you to the right checklist. Which course or admission route are you exploring?",
+    "sources": [
+      "https://sit.ac.in/doc-required/",
+      "https://sit.ac.in/admission/"
+    ]
+  },
+  {
+    "id": "placement_yearwise_data",
+    "title": "Recent Year-wise Placement Results",
+    "category": "placements",
+    "keywords": [
+      "2024 placement statistics",
+      "2025 placement statistics",
+      "2023 placement statistics",
+      "placement offers by year",
+      "placement companies by year",
+      "2024 25 placement",
+      "placement average 2024 25",
+      "highest package 2024 25"
+    ],
+    "answer": "Placement results change from batch to batch. SIT reports 1,066 offers from 240 companies for 2024–25; I can also share that year’s package figures if you’d like.",
+    "sources": [
+      "https://sit.ac.in/sit-placements/"
+    ]
+  },
+  {
+    "id": "sip_club_introduction_2025",
+    "title": "Student Induction Programme Club Introductions 2025",
+    "category": "activities",
+    "keywords": [
+      "sip 2025",
+      "student induction programme",
+      "club introduction schedule",
+      "which clubs presented at sip",
+      "induction clubs",
+      "club presentation",
+      "student clubs 2025",
+      "introduction to sit clubs"
+    ],
+    "answer": "At the 2025 student induction, clubs introduced activities in coding, engineering, arts, quizzes, and more. Some names were AI Brewery, Decoders, Soaring Eagles, Team Quest, and The Book Cult. The current Clubs page has the latest list. Would you like to know how students can get involved?",
+    "sources": [
+      "https://sit.ac.in/clubs/",
+      "https://sit.ac.in/campus/",
+      "SIP CLUB INTRODUCTION TT.pdf (2025 schedule)"
+    ]
+  },
+  {
+    "id": "health_centre_hours",
+    "title": "Health Centre Timings and Emergency Support",
+    "category": "facilities",
+    "keywords": [
+      "health centre timings",
+      "medical centre timings",
+      "doctor in college",
+      "ambulance number",
+      "college clinic number",
+      "medical emergency",
+      "health centre phone",
+      "medical help on campus"
+    ],
+    "answer": "The Health Centre lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. Call 0816-2214075 to check before you go. What else would make your visit to campus easier?",
+    "sources": [
+      "https://sit.ac.in/health-centre/"
+    ]
+  },
+  {
+    "id": "choose_a_department",
+    "title": "Choosing a Department",
+    "category": "academics",
+    "keywords": [
+      "which branch should i choose",
+      "which department is best",
+      "best branch in sit",
+      "help me choose a course",
+      "which course suits me",
+      "confused about branch",
+      "branch selection help"
+    ],
+    "answer": "There isn’t one best branch for everyone. Tell me which subjects you like and what kind of work sounds interesting—coding, electronics, designing, biology, or business—and I’ll help you explore suitable departments.",
+    "sources": [
+      "https://sit.ac.in/department/"
+    ]
+  },
+  {
+    "id": "compare_computing_branches",
+    "title": "Comparing CSE, ISE, AI and Data Science",
+    "category": "academics",
+    "keywords": [
+      "difference between cse and ise",
+      "cse or ise",
+      "difference between ai ml and data science",
+      "aiml or aids",
+      "compare computer branches",
+      "which computer branch is better"
+    ],
+    "answer": "In simple terms, CSE gives you a broad computing foundation, ISE focuses more on information systems, and AI and Data Science focus on intelligent systems and data. The exact subjects differ, so compare SIT’s current course plans before choosing. Tell me what subjects you enjoy and I’ll help you explore further.",
+    "sources": [
+      "https://sit.ac.in/department/"
+    ]
+  },
+  {
+    "id": "admission_eligibility",
+    "title": "Admission Eligibility and Cutoffs",
+    "category": "admissions",
+    "keywords": [
+      "am i eligible for sit",
+      "eligibility criteria",
+      "marks required for admission",
+      "what rank do i need",
+      "kcet cutoff",
+      "comedk cutoff",
+      "admission cutoff rank",
+      "minimum marks for admission"
+    ],
+    "answer": "Eligibility and cutoffs depend on your course, admission route, category, and the current year. Which programme are you considering, and are you applying through KCET or COMEDK?",
+    "sources": [
+      "https://sit.ac.in/admission/",
+      "https://sit.ac.in/doc-required/"
+    ]
+  },
+  {
+    "id": "online_admission_enquiry",
+    "title": "How to Contact Admissions",
+    "category": "admissions",
+    "keywords": [
+      "apply online",
+      "online admission form",
+      "admission enquiry form",
+      "how to apply to sit",
+      "contact admissions",
+      "admission office number",
+      "admission help"
+    ],
+    "answer": "You can send an enquiry through SIT’s website or call Admissions on 0816-2282696, 0816-2214001, or 0816-2214002. If you tell me your course and entrance route, I can point you to the right page.",
+    "sources": [
+      "https://sit.ac.in/admission-form/",
+      "https://sit.ac.in/contact-us/"
+    ]
+  }
+]

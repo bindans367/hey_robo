@@ -1,0 +1,245 @@
+const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null };
+const $ = (selector) => document.querySelector(selector);
+const esc = (value = "") => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const pretty = value => String(value || "general").replace(/[_-]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+let toastTimer;
+
+async function api(path, body) {
+  const response = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  let payload;
+  try { payload = await response.json(); } catch { payload = {}; }
+  if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+  return payload;
+}
+function toast(message, bad=false) {
+  const el = $("#toast"); el.textContent = message; el.className = `toast show${bad ? " bad" : ""}`;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = "toast", 3200);
+}
+function setBusy(button, busy, label) {
+  if (busy) { button.dataset.oldText = button.innerHTML; button.disabled = true; button.innerHTML = `<span class="spinner"></span> ${label || "Working…"}`; }
+  else { button.disabled = false; if (button.dataset.oldText) button.innerHTML = button.dataset.oldText; }
+}
+function go(page) {
+  document.querySelectorAll(".page").forEach(x => x.classList.toggle("active", x.id === `page-${page}`));
+  document.querySelectorAll(".nav-item").forEach(x => x.classList.toggle("active", x.dataset.page === page));
+  const title = {overview:"Overview",knowledge:"Knowledge base",speak:"Script to speech",history:"Conversation history",settings:"Voice & AI settings"}[page] || "Overview";
+  $("#crumb-page").textContent = title;
+  if (page === "history") refreshHistory();
+  if (page === "knowledge") renderKnowledge();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function applySettings(settings) {
+  state.settings = settings;
+  const modeLabel = settings.mode === "online" ? "Gemini / cloud AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
+  $("#mode-badge").innerHTML = `<i></i> ${modeLabel}`;
+  $("#mode-badge").classList.toggle("online", settings.mode === "online");
+  const voice = settings.voice || {};
+  const selectedVoiceId = voice.provider === "system" ? "system" : (voice.voice_id || "en-IN-NeerjaNeural");
+  if (![...$("#tts-voice").options].some(option => option.value === selectedVoiceId)) {
+    const option = new Option(`${selectedVoiceId} · ${voice.gender || "female"}`, selectedVoiceId);
+    option.dataset.gender = voice.gender || "female";
+    $("#tts-voice").add(option);
+  }
+  $("#tts-voice").value = selectedVoiceId;
+  $("#speed-range").value = voice.speed ?? 1;
+  $("#pitch-range").value = voice.pitch ?? 0;
+  $("#volume-range").value = voice.volume ?? 100;
+  updateRangeLabels();
+  const online = settings.online || {};
+  $("#online-url").value = online.base_url || "https://generativelanguage.googleapis.com/v1beta/openai";
+  $("#online-model").value = online.model || "gemini-3.8-flash";
+  $("#cloud-provider").value = /generativelanguage\.googleapis\.com/i.test(online.base_url || "") ? "gemini" : "custom";
+  $("#online-key").value = "";
+  $("#key-status").textContent = online.api_key_set ? "A key is saved on this device. Leave blank to keep it." : "No key saved yet.";
+  const local = settings.local_llm || {};
+  $("#local-url").value = local.base_url || "http://127.0.0.1:11434/v1";
+  $("#local-model").value = local.model || "qwen3:0.6b";
+  $("#local-key").value = "";
+  $("#local-key-status").textContent = local.api_key_set ? "A local server key is saved. Leave blank to keep it." : "No local key saved; Ollama normally needs none.";
+  $("#system-prompt").value = settings.system_prompt || "";
+  const flow = settings.conversation || {}, mic = settings.microphone || {};
+  $("#welcome-text").value = flow.welcome || "";
+  $("#wake-phrases").value = (flow.wake_phrases || []).join("\n");
+  $("#stop-phrases").value = (flow.stop_phrases || []).join("\n");
+  $("#farewell-text").value = flow.farewell || "";
+  $("#thank-reply").value = flow.thank_reply || "";
+  $("#no-match-reply").value = flow.no_match_reply || "";
+  $("#pause-reply").value = flow.pause_reply || "";
+  $("#listen-timeout").value = flow.listen_timeout ?? 8;
+  $("#phrase-limit").value = flow.phrase_time_limit ?? 15;
+  $("#sleep-after-answer").value = flow.sleep_after_answer ?? 2;
+  $("#mic-device").value = mic.device_index ?? -1;
+  $("#mic-threshold").value = mic.energy_threshold ?? 300;
+  $("#robo-mood").value = flow.mood || "friendly";
+  $("#humor-enabled").checked = Boolean(flow.humor_enabled);
+  $("#humor-frequency").value = flow.humor_frequency ?? 5;
+  document.querySelectorAll("input[name=answer-mode]").forEach(r => r.checked = r.value === settings.mode);
+  toggleOnlineFields();
+  updateSpeechLabels();
+}
+function updateRangeLabels() {
+  const speed = Number($("#speed-range").value), pitch = Number($("#pitch-range").value), volume = Number($("#volume-range").value);
+  $("#speed-value").textContent = `${speed.toFixed(2).replace(/0$/,"")}×`;
+  $("#pitch-value").textContent = pitch === 0 ? "Neutral" : `${pitch > 0 ? "+" : ""}${pitch}`;
+  $("#volume-value").textContent = `${volume}%`;
+  $("#stat-voice-detail").textContent = `${speed < .9 ? "Slow and clear" : speed > 1.15 ? "Brisk pace" : "Natural pace"} · ${pitch === 0 ? "neutral tone" : pitch < 0 ? "lower tone" : "higher tone"}`;
+  $("#stat-voice").textContent = $("#tts-voice")?.selectedOptions[0]?.textContent.split("·")[0].trim() || "Neerja";
+  updateSpeechLabels();
+}
+function updateSpeechLabels() {
+  const voiceName = $("#tts-voice")?.selectedOptions[0]?.textContent.split("·")[0].trim() || "Neerja";
+  const speed = Number($("#speed-range")?.value || 1);
+  if ($("#speech-voice-name")) $("#speech-voice-name").textContent = voiceName + " voice";
+  if ($("#speech-speed-name")) $("#speech-speed-name").textContent = speed < .9 ? "Slower pace" : speed > 1.15 ? "Faster pace" : "Natural pace";
+}
+function toggleOnlineFields() {
+  const mode = document.querySelector("input[name=answer-mode]:checked")?.value || "offline";
+  const online = mode === "online", local = mode === "local";
+  $("#online-fields").classList.toggle("hidden", !online);
+  $("#local-fields").classList.toggle("hidden", !local);
+  $("#offline-note").classList.toggle("hidden", online || local);
+}
+function renderKnowledge() {
+  const query = $("#knowledge-search").value.trim().toLowerCase();
+  const category = $("#category-filter").value;
+  const rows = state.knowledge.filter(item => (!category || item.category === category) && (!query || [item.title,item.answer,item.id,...(item.keywords||[])].join(" ").toLowerCase().includes(query)));
+  $("#knowledge-nav-count").textContent = state.knowledge.length;
+  $("#stat-knowledge").textContent = state.knowledge.length.toLocaleString();
+  $("#result-count").textContent = `${rows.length} answer${rows.length===1?"":"s"}`;
+  $("#knowledge-empty").classList.toggle("hidden", rows.length > 0);
+  $("#knowledge-rows").innerHTML = rows.map(item => `<tr>
+    <td><div class="topic-cell"><span class="topic-dot"></span><div><strong>${esc(item.title)}</strong><small>${esc(item.id)}</small></div></div></td>
+    <td><div class="answer-preview">${esc(item.answer)}</div><span class="category-chip">${esc(pretty(item.category))}</span></td>
+    <td><span class="trigger-list">${esc((item.keywords||[]).slice(0,2).join(" · "))}${(item.keywords||[]).length>2?` <b>+${item.keywords.length-2}</b>`:""}</span></td>
+    <td><div class="row-actions"><button class="row-button edit-entry" data-id="${esc(item.id)}" title="Edit">✎</button><button class="row-button delete-entry" data-id="${esc(item.id)}" title="Delete">×</button></div></td></tr>`).join("");
+}
+function renderHistory() {
+  const events = state.history;
+  const content = events.length ? events.map(event => {
+    const script = event.kind === "script";
+    const time = event.time ? new Date(event.time).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "";
+    return `<article class="history-item"><div class="history-symbol ${script?"script-symbol":""}">${script?"◖":"?"}</div><div class="history-body"><div class="history-item-head"><span class="history-kind">${script?"SCRIPT SPOKEN":"QUESTION"}</span><time>${esc(time)}</time><span class="history-mode">${esc(pretty(event.source || "robot"))}</span></div><p class="history-question">${esc(event.text)}</p>${script?"":`<p class="history-answer"><span>ROBO</span> ${esc(event.answer || "")}</p>`}</div></article>`;
+  }).join("") : `<div class="empty-history"><div>◷</div><h3>No conversations yet</h3><p>Questions, answers, and scripts Robo speaks will appear here.</p></div>`;
+  $("#history-list").innerHTML = content;
+  $("#recent-list").innerHTML = events.slice(0,4).map(e => `<div class="recent-item"><span class="recent-icon ${e.kind === "script"?"":"question-icon"}">${e.kind === "script"?"◖":"?"}</span><div><strong>${esc(e.kind === "script"?"Script spoken":e.text)}</strong><small>${esc(e.kind === "script"?e.text:e.answer||"")}</small></div><time>${esc(e.time?new Date(e.time).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"")}</time></div>`).join("") || `<div class="recent-empty">Robo’s recent answers and scripts will show up here.</div>`;
+  $("#script-recent-list").innerHTML = events.filter(e=>e.kind==="script").slice(0,3).map(e=>`<div class="recent-item"><span class="recent-icon">◖</span><div><strong>${esc(e.text.slice(0,100))}</strong><small>${esc(e.time?new Date(e.time).toLocaleString():"")}</small></div></div>`).join("") || `<div class="recent-empty">Your recently spoken scripts will show up here.</div>`;
+  $("#stat-history").textContent = events.length.toLocaleString();
+}
+function renderSavedScripts() {
+  const select=$("#saved-scripts"), active=state.activeScriptId;
+  select.innerHTML=`<option value="">Choose a saved script…</option>`+state.scripts.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+  select.value=state.scripts.some(s=>s.id===active)?active:"";
+  $("#delete-script").disabled=!select.value;
+}
+function abortSpeech() {
+  return api("/api/robot/abort-speech",{}).then(()=>toast("Stop requested. Robo will stop speaking now."))
+    .catch(error=>toast(error.message,true));
+}
+function renderRobotStatus(robot={running:false}) {
+  const running=Boolean(robot.running);
+  const activity=robot.activity||{}, phase=activity.phase|| (running?"STARTING":"STOPPED");
+  const labels={STARTING:"STARTING",GREETING:"GREETING",LISTENING:"LISTENING",TRANSCRIPT:"HEARD YOU",THINKING:"THINKING",SPEAKING:"SPEAKING",INTERRUPTING:"STOPPING SPEECH",INTERRUPTED:"SPEECH STOPPED",READY:"READY",STOPPED:"STOPPED"};
+  $("#runtime-indicator").classList.toggle("running",running);
+  $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
+  $("#runtime-detail").textContent=running?(activity.detail||`Microphone assistant is running${robot.pid?` · process ${robot.pid}`:""}.`):"Start the microphone assistant to let students talk with Robo.";
+  $("#robot-start").classList.toggle("hidden",running);$("#robot-stop").classList.toggle("hidden",!running);
+  $("#robot-run-mode").classList.toggle("hidden",running);
+  $("#robot-status-badge").innerHTML=`<i></i> ${running?"ROBOT LISTENING":"CONTROL PANEL READY"}`;
+  $("#robot-status-badge").classList.toggle("live",running);
+  $("#live-phase").classList.toggle("speaking",phase==="SPEAKING");
+  $("#live-phase").innerHTML=`<i></i><span>${esc(labels[phase]||phase)}</span>`;
+  $("#live-detail").textContent=activity.detail||(running?"Robo is starting up.":"Start listening to see the current activity here.");
+  $("#live-transcript").textContent=activity.transcript|| (phase==="LISTENING"?"Listening… the transcript appears after the utterance is recognized.":"The recognized words will appear here after each utterance.");
+  $("#live-answer").textContent=activity.answer||"Robo’s latest response will appear here.";
+  $("#live-title").textContent=activity.title||"";
+  $("#live-updated").textContent=activity.updated_at?`Updated ${new Date(activity.updated_at).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"})}`:"Live state refreshes automatically.";
+  $("#abort-speech").classList.toggle("hidden",phase!=="SPEAKING");
+  $("#abort-script-speech").classList.toggle("hidden",phase!=="SPEAKING");
+  $("#repeat-answer").classList.toggle("hidden",!activity.answer);
+}
+async function refreshRobotStatus(){try{const s=await api("/api/status");renderRobotStatus(s.robot);}catch{}}
+async function refreshHistory() { try { state.history = (await api("/api/history")).history; renderHistory(); } catch (e) { toast(e.message,true); } }
+async function refreshAll() {
+  try {
+    const data = await api("/api/bootstrap"); state.knowledge = data.knowledge || []; state.history = data.history || []; state.categories = data.categories || []; state.scripts=data.scripts||[]; renderSavedScripts();
+    const select = $("#category-filter"), previous = select.value;
+    select.innerHTML = `<option value="">All categories</option>` + state.categories.map(x=>`<option value="${esc(x)}">${esc(pretty(x))}</option>`).join("");
+    if (state.categories.includes(previous)) select.value = previous;
+    applySettings(data.settings); renderKnowledge(); renderHistory();
+    $("#knowledge-nav-count").textContent = state.knowledge.length;
+    refreshRobotStatus();
+  } catch (e) { toast(`Could not connect to Robo Brain: ${e.message}`,true); }
+}
+function slug(text) { return text.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60) || "new_answer"; }
+function openEditor(item=null) {
+  $("#entry-form").reset();
+  $("#entry-original-id").value = item?.id || "";
+  $("#entry-title").value = item?.title || "";
+  $("#entry-id").value = item?.id || "";
+  $("#entry-id").readOnly = Boolean(item);
+  $("#entry-category").value = item?.category || "general";
+  $("#entry-keywords").value = (item?.keywords || []).join("\n");
+  $("#entry-answer").value = item?.answer || "";
+  $("#modal-title").textContent = item ? "Edit answer" : "Add an answer";
+  $("#entry-modal").classList.remove("hidden");
+  setTimeout(()=>$("#entry-title").focus(),80);
+}
+function closeEditor() { $("#entry-modal").classList.add("hidden"); }
+async function saveSettings(button) {
+  const existing = state.settings || {};
+  const mode = document.querySelector("input[name=answer-mode]:checked")?.value || "offline";
+  const lines = selector => $(selector).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const voiceId=$("#tts-voice").value, systemVoice=voiceId==="system", voiceOption=$("#tts-voice").selectedOptions[0];
+  const payload = {mode, system_prompt:$("#system-prompt").value.trim(), voice:{provider:systemVoice?"system":"edge",voice_id:systemVoice?(state.settings?.voice?.voice_id||"en-IN-NeerjaNeural"):voiceId,gender:systemVoice?(state.settings?.voice?.gender||"female"):(voiceOption?.dataset.gender||"female"),name:systemVoice?"":voiceId,speed:Number($("#speed-range").value),pitch:Number($("#pitch-range").value),volume:Number($("#volume-range").value)}, local_llm:{base_url:$("#local-url").value.trim()||"http://127.0.0.1:11434/v1",model:$("#local-model").value.trim()||"qwen3:0.6b",api_key:$("#local-key").value}, online:{base_url:$("#online-url").value.trim()||"https://generativelanguage.googleapis.com/v1beta/openai",model:$("#online-model").value.trim()||"gemini-3.8-flash",api_key:$("#online-key").value}, conversation:{welcome:$("#welcome-text").value,wake_phrases:lines("#wake-phrases"),stop_phrases:lines("#stop-phrases"),farewell:$("#farewell-text").value,thank_reply:$("#thank-reply").value,no_match_reply:$("#no-match-reply").value,pause_reply:$("#pause-reply").value,listen_timeout:Number($("#listen-timeout").value),phrase_time_limit:Number($("#phrase-limit").value),sleep_after_answer:Number($("#sleep-after-answer").value),mood:$("#robo-mood").value,humor_enabled:$("#humor-enabled").checked,humor_frequency:Number($("#humor-frequency").value)}, microphone:{device_index:Number($("#mic-device").value),energy_threshold:Number($("#mic-threshold").value)}};
+  setBusy(button,true,"Saving…");
+  try { const data=await api("/api/settings",{settings:payload}); applySettings(data.settings); $("#save-status").textContent="Saved just now · applies to the next answer"; toast("Robo’s settings are saved."); return true; }
+  catch(e){toast(e.message,true);return false;} finally{setBusy(button,false);}
+}
+
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+$("#refresh-btn").addEventListener("click",refreshAll);
+$("#history-refresh").addEventListener("click",refreshHistory);
+$("#knowledge-search").addEventListener("input",renderKnowledge);
+$("#category-filter").addEventListener("change",renderKnowledge);
+$("#add-entry").addEventListener("click",()=>openEditor());
+$("#knowledge-rows").addEventListener("click",async event=>{
+  const edit=event.target.closest(".edit-entry"), del=event.target.closest(".delete-entry");
+  if(edit){openEditor(state.knowledge.find(x=>x.id===edit.dataset.id));return;}
+  if(del){const item=state.knowledge.find(x=>x.id===del.dataset.id);if(!item||!confirm(`Delete “${item.title}” from Robo’s knowledge base?`))return;
+    try{const data=await api("/api/knowledge/delete",{id:item.id});state.knowledge=data.knowledge;renderKnowledge();toast("Answer removed from Robo’s knowledge.");}catch(e){toast(e.message,true);}}
+});
+$("#entry-title").addEventListener("input",()=>{if(!$("#entry-original-id").value)$("#entry-id").value=slug($("#entry-title").value);});
+$("#entry-form").addEventListener("submit",async event=>{
+  event.preventDefault();const old=state.knowledge.find(x=>x.id===$("#entry-original-id").value);const speakAfterSave=$("#speak-after-save").checked;
+  const item={id:$("#entry-id").value.trim(),title:$("#entry-title").value.trim(),category:$("#entry-category").value.trim()||"general",keywords:$("#entry-keywords").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),answer:$("#entry-answer").value.trim(),...(old?.sources?{sources:old.sources}:{})};
+  const button=$("#entry-form button[type=submit]");setBusy(button,true,"Saving…");
+  try{const data=await api("/api/knowledge/save",{item});state.knowledge=data.knowledge;state.categories=[...new Set(state.knowledge.map(x=>x.category||"general"))].sort();renderKnowledge();closeEditor();toast("Saved. Robo can use the updated answer now.");if(speakAfterSave){try{await api("/api/speak",{text:item.answer});toast("Saved, and Robo spoke the updated answer.");refreshHistory();}catch(speechError){toast(`Saved, but speech failed: ${speechError.message}`,true);}}}
+  catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+});
+$("#modal-close").addEventListener("click",closeEditor);$("#cancel-entry").addEventListener("click",closeEditor);
+$("#entry-modal").addEventListener("click",e=>{if(e.target===$("#entry-modal"))closeEditor();});
+$("#speech-text").addEventListener("input",()=>$("#char-count").textContent=`${$("#speech-text").value.length.toLocaleString()} / 12,000`);
+$("#saved-scripts").addEventListener("change",()=>{const script=state.scripts.find(s=>s.id===$("#saved-scripts").value);state.activeScriptId=script?.id||"";if(script){$("#script-name").value=script.name;$("#speech-text").value=script.text;$("#char-count").textContent=`${script.text.length.toLocaleString()} / 12,000`;}renderSavedScripts();});
+$("#save-script").addEventListener("click",async e=>{const name=$("#script-name").value.trim(),text=$("#speech-text").value.trim();if(!name||!text){toast("Add a script name and text before saving.",true);return;}const btn=e.currentTarget;setBusy(btn,true,"Saving…");try{const data=await api("/api/scripts/save",{id:state.activeScriptId,name,text});state.scripts=data.scripts;state.activeScriptId=data.script.id;renderSavedScripts();toast("Script saved for next time.");}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
+$("#delete-script").addEventListener("click",async()=>{const id=$("#saved-scripts").value,script=state.scripts.find(s=>s.id===id);if(!script)return;if(!confirm(`Delete saved script “${script.name}”?`))return;try{const data=await api("/api/scripts/delete",{id});state.scripts=data.scripts;state.activeScriptId="";$("#script-name").value="";renderSavedScripts();toast("Saved script deleted.");}catch(error){toast(error.message,true);}});
+$("#speak-script").addEventListener("click",async e=>{const btn=e.currentTarget,text=$("#speech-text").value.trim();if(!text){toast("Paste or type the speech first.",true);return;}setBusy(btn,true,"Robo is speaking…");try{const result=await api("/api/speak",{text});toast(result.spoken===false?"Speech was stopped.":"Robo finished speaking.");refreshHistory();}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#abort-speech").addEventListener("click",abortSpeech);$("#abort-script-speech").addEventListener("click",abortSpeech);
+$("#repeat-answer").addEventListener("click",async e=>{const text=$("#live-answer").textContent.trim();if(!text||text==="Robo’s latest response will appear here.")return;const btn=e.currentTarget;setBusy(btn,true,"Speaking…");try{const result=await api("/api/speak",{text});toast(result.spoken===false?"Speech was stopped.":"Robo repeated the answer.");refreshHistory();}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
+$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const data=await api("/api/ask",{query,speak:$("#ask-speak").checked});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#tts-voice").addEventListener("change",updateRangeLabels);
+["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
+document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
+$("#cloud-provider").addEventListener("change",()=>{if($("#cloud-provider").value==="gemini"){$("#online-url").value="https://generativelanguage.googleapis.com/v1beta/openai";$("#online-model").value="gemini-3.8-flash";}});
+$("#save-settings").addEventListener("click",e=>saveSettings(e.currentTarget));$("#save-settings-bottom").addEventListener("click",e=>saveSettings(e.currentTarget));
+$("#test-voice").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Applying voice…");try{if(!await saveSettings($("#save-settings")))return;setBusy(btn,true,"Speaking…");const result=await api("/api/speak",{text:"Hello, I am Robo, your campus guide. How can I help you today?"});if(result.spoken===false)throw new Error("Speech playback failed. Check the selected voice and audio output.");const status=result.voice_status||{};if(status.fallback)toast(`Windows voice used because ${status.voice_id||"the neural voice"} failed: ${status.reason}`,true);else toast(`Voice sample played using ${status.used_voice||status.voice_id||"saved voice settings"}.`);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#test-online").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="online"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"online"});toast(result.message||"Cloud connection is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#test-local").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="local"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"local"});toast(result.message||"Local model is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#clear-history").addEventListener("click",async()=>{if(!confirm("Clear all saved conversation and speech history?"))return;try{await api("/api/history/clear",{});state.history=[];renderHistory();toast("History cleared.");}catch(e){toast(e.message,true);}});
+$("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Starting…");try{const r=await api("/api/robot/start",{mode:$("#robot-run-mode").value});renderRobotStatus(r.robot);toast("Robo’s microphone assistant has started.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+
+refreshAll();
+setInterval(refreshRobotStatus,900);
+setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-overview").classList.contains("active"))refreshHistory();},12000);
+

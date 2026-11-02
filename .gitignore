@@ -1,0 +1,16 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary and local state files
+*.tmp
+*.lock
+data/*.lock
+data/robot_runtime.log
+data/*.tmp
