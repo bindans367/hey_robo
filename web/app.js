@@ -364,8 +364,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   let lastSpeechTime = 0;
   let isSpeaking = false;
   let ambientFloor = 0.02;
-  let silenceTimeoutMs = 1200;
+  const silenceTimeoutMs = 1600;
   let wakeRec = null;
+
+  // Wake lock and debounce to prevent repeated wake triggers
+  let wakeLock = false;
+  let lastWakeTime = 0;
+  let listenTimeoutTimer = null;
 
   function playWakeBeep() {
     try {
@@ -374,12 +379,12 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(1046, ctx.currentTime);
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.3);
+      osc.stop(ctx.currentTime + 0.25);
     } catch {
       const audio = new Audio("/api/wake-beep");
       audio.play().catch(() => {});
@@ -389,7 +394,11 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   function setVoiceUI(state, textMsg) {
     voiceState = state;
     badge.className = `voice-badge ${state.toLowerCase()}`;
-    badge.querySelector("span").textContent = state === "SLEEP" ? "GHOST SLEEP" : state;
+    const badgeText = state === "SLEEP" ? "👻 GHOST SLEEP" :
+                      state === "LISTENING" ? "👂 LISTENING" :
+                      state === "PROCESSING" ? "🧠 THINKING" :
+                      state === "SPEAKING" ? "🗣 SPEAKING" : "⏸ IDLE";
+    badge.querySelector("span").textContent = badgeText;
     micHero.className = `voice-mic-hero ${state.toLowerCase()}`;
     if (textMsg) label.textContent = textMsg;
 
@@ -401,7 +410,7 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       vuText.textContent = "Ghost Mode active · Listening locally for 'Hey Robo'";
     } else if (state === "IDLE") {
       vuFill.style.width = "0%";
-      vuText.textContent = "Mic ready · Far-field AGC active";
+      vuText.textContent = "Mic ready · Click hero mic to talk";
     }
   }
 
@@ -417,13 +426,19 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     wakeRec.lang = "en-US";
 
     wakeRec.onresult = (e) => {
-      // Echo suppression: Ignore while Robo is speaking
-      if (voiceState === "SPEAKING" || voiceState === "PROCESSING") return;
+      // Ignore if robot is speaking, processing, or already awake
+      if (voiceState === "SPEAKING" || voiceState === "PROCESSING" || voiceState === "LISTENING") return;
       if (!ghostToggle.checked) return;
+
+      const now = Date.now();
+      if (wakeLock || (now - lastWakeTime < 3000)) return;
 
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const transcript = e.results[i][0].transcript.toLowerCase();
-        if (/hey\s*robo|hey\s*robot|hello\s*robo|hello\s*robot|hit\s*robo|\brobo\b/.test(transcript)) {
+        // Reliable wake phrase check (debounce prevents multi-firing)
+        if (/hey\s*robo|hey\s*robot|hello\s*robo|hello\s*robot|hi\s*robo/.test(transcript)) {
+          wakeLock = true;
+          lastWakeTime = now;
           console.log("[GHOST] Wake phrase detected:", transcript);
           triggerWakeUp();
           break;
@@ -432,13 +447,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     };
 
     wakeRec.onerror = () => {
-      if (ghostToggle.checked && voiceState === "SLEEP") {
+      if (ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
         setTimeout(() => { try { wakeRec?.start(); } catch {} }, 1200);
       }
     };
 
     wakeRec.onend = () => {
-      if (ghostToggle.checked && voiceState === "SLEEP") {
+      if (ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
         setTimeout(() => { try { wakeRec?.start(); } catch {} }, 400);
       }
     };
@@ -455,10 +470,12 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   async function triggerWakeUp() {
     stopBrowserWakeWord();
     playWakeBeep();
-    toast("Wake-word detected! Robo is awake.");
+    toast("Wake-word detected! Robo is listening.");
     const ready = await setupAudio();
     if (ready) {
       startListening();
+    } else {
+      enterSleepMode();
     }
   }
 
@@ -470,20 +487,30 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1
         }
       });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AudioContextClass();
+      audioCtx = new AudioContextClass({ sampleRate: 16000 });
 
       const source = audioCtx.createMediaStreamSource(micStream);
-      // High-pass filter cuts rumble below 110 Hz
+
+      // High-pass filter cuts room/desk rumble below 80 Hz without cutting human speech
       const highpass = audioCtx.createBiquadFilter();
       highpass.type = "highpass";
-      highpass.frequency.value = 110;
+      highpass.frequency.value = 80;
 
-      // Far-field amplification gain (2.5x)
+      // Dynamics Compressor: gently lifts quiet far-field speech while preventing clipping on loud speech
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 12;
+      compressor.ratio.value = 4;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.25;
+
       const gainNode = audioCtx.createGain();
-      gainNode.gain.value = 2.5;
+      gainNode.gain.value = 1.2;
 
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 512;
@@ -491,7 +518,8 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       const dest = audioCtx.createMediaStreamDestination();
 
       source.connect(highpass);
-      highpass.connect(gainNode);
+      highpass.connect(compressor);
+      compressor.connect(gainNode);
       gainNode.connect(analyser);
       gainNode.connect(dest);
 
@@ -516,6 +544,7 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     } catch (err) {
       toast("Microphone access denied: " + err.message, true);
       setVoiceUI("IDLE", "Microphone permission needed");
+      wakeLock = false;
       return false;
     }
   }
@@ -537,18 +566,18 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       const rms = Math.sqrt(sum / dataArray.length);
 
       // Update VU meter UI
-      const meterPercent = Math.min(100, Math.round(rms * 380));
+      const meterPercent = Math.min(100, Math.round(rms * 400));
       vuFill.style.width = meterPercent + "%";
 
-      ambientFloor = ambientFloor * 0.96 + rms * 0.04;
-      const speechThreshold = Math.max(0.038, ambientFloor * 2.2);
-      const silenceThreshold = Math.max(0.022, ambientFloor * 1.35);
+      ambientFloor = ambientFloor * 0.97 + rms * 0.03;
+      const speechThreshold = Math.max(0.032, ambientFloor * 2.0);
+      const silenceThreshold = Math.max(0.018, ambientFloor * 1.3);
 
       const now = Date.now();
 
       // 1. Interruption (Barge-in) detection while Robo is speaking
       if (voiceState === "SPEAKING") {
-        if (rms > 0.16) {
+        if (rms > 0.18) {
           interruptSpeech();
           return requestAnimationFrame(checkAudio);
         }
@@ -561,29 +590,28 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
             isSpeaking = true;
             speechStartTime = now;
             lastSpeechTime = now;
-            recordedChunks = [];
-            if (mediaRecorder.state !== "recording") {
-              mediaRecorder.start(100);
-            }
             label.textContent = "Listening to your question…";
-            vuText.textContent = "Voice detected · Recording speech…";
+            vuText.textContent = "Speech detected · Speak naturally…";
+            clearTimeout(listenTimeoutTimer);
           } else {
             lastSpeechTime = now;
           }
         } else if (isSpeaking) {
           if (rms > silenceThreshold) {
             lastSpeechTime = now;
-          } else if (now - lastSpeechTime > silenceTimeoutMs) {
-            // Silence detected after speech -> process question
+          } else if ((now - lastSpeechTime > silenceTimeoutMs) && (now - speechStartTime > 600)) {
+            // Natural pause detected after user spoke -> process question
             isSpeaking = false;
-            vuText.textContent = "Processing speech…";
-            if (mediaRecorder.state === "recording") {
+            vuText.textContent = "Question complete · Processing…";
+            clearTimeout(listenTimeoutTimer);
+            if (mediaRecorder && mediaRecorder.state === "recording") {
               mediaRecorder.stop();
             }
-          } else if (now - speechStartTime > 16000) {
-            // Maximum phrase timeout (16s)
+          } else if (now - speechStartTime > 14000) {
+            // Max phrase limit (14s)
             isSpeaking = false;
-            if (mediaRecorder.state === "recording") {
+            clearTimeout(listenTimeoutTimer);
+            if (mediaRecorder && mediaRecorder.state === "recording") {
               mediaRecorder.stop();
             }
           }
@@ -604,20 +632,42 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     recordedChunks = [];
     setVoiceUI("LISTENING", "Listening… Speak your question now");
     vuText.textContent = "Listening for question (far-field active)…";
+
+    // Start recording immediately so the user's first words are never clipped
+    if (mediaRecorder && mediaRecorder.state !== "recording") {
+      try { mediaRecorder.start(100); } catch {}
+    }
+
+    // Safety timeout: if no speech is detected after 8 seconds, go back to sleep
+    clearTimeout(listenTimeoutTimer);
+    listenTimeoutTimer = setTimeout(() => {
+      if (voiceState === "LISTENING" && !isSpeaking) {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          try { mediaRecorder.stop(); } catch {}
+        }
+        recordedChunks = [];
+        toast("No speech detected. Returning to sleep.");
+        enterSleepMode();
+      }
+    }, 8000);
   }
 
   function enterSleepMode() {
+    clearTimeout(listenTimeoutTimer);
     stopBrowserWakeWord();
+    wakeLock = false; // Release wake lock
     setVoiceUI("SLEEP", "Ghost Mode: Sleeping silently · Say 'Hey Robo' to wake");
     vuText.textContent = "Ghost Mode active · Listening locally for 'Hey Robo'";
     setTimeout(() => {
       if (ghostToggle.checked && voiceState === "SLEEP") {
         startBrowserWakeWord();
       }
-    }, 800);
+    }, 600);
   }
 
   async function handleRecordingComplete() {
+    clearTimeout(listenTimeoutTimer);
+
     if (!recordedChunks.length) {
       if (ghostToggle.checked) {
         enterSleepMode();
@@ -728,7 +778,6 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
         resolve();
       };
       player.play().catch(() => {
-        // Fallback to browser SpeechSynthesis if autoplay blocked
         if (window.speechSynthesis && botText.textContent) {
           const utter = new SpeechSynthesisUtterance(botText.textContent);
           utter.onend = () => {
@@ -746,7 +795,6 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
   function onAudioFinished() {
     if (ghostToggle.checked) {
-      // 9. Auto-return to SLEEP after completing answer
       enterSleepMode();
     } else if (continuousToggle.checked) {
       setTimeout(startListening, 600);
@@ -800,11 +848,12 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       enterSleepMode();
     } else {
       stopBrowserWakeWord();
+      wakeLock = false;
       setVoiceUI("IDLE", "Ghost Mode disabled · Click to start");
     }
   });
 
-  // 1. On startup: Enter SLEEP mode when Ghost Mode is checked
+  // On startup: Enter SLEEP mode when Ghost Mode is checked
   if (ghostToggle.checked) {
     enterSleepMode();
   }

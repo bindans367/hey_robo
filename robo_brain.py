@@ -174,13 +174,16 @@ class Handler(BaseHTTPRequestHandler):
         print("[ROBO BRAIN] " + fmt % args)
 
     def send_json(self, payload, status=200):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def body_json(self):
         length = int(self.headers.get("Content-Length", "0"))
@@ -265,7 +268,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with open(target, "rb") as f:
                 content = f.read()
-            mime = "text/html; charset=utf-8" if target.endswith(".html") else "text/javascript; charset=utf-8" if target.endswith(".js") else "text/css; charset=utf-8"
+            mime = "text/html; charset=utf-8" if target.endswith(".html") else "text/javascript; charset=utf-8" if target.endswith(".js") else "text/css; charset=utf-8" if target.endswith(".css") else "image/x-icon" if target.endswith(".ico") else "image/svg+xml" if target.endswith(".svg") else "application/octet-stream"
             self.send_response(200)
             self.send_header("Content-Type", mime)
             self.send_header("Content-Length", str(len(content)))

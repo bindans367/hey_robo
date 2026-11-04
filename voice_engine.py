@@ -77,7 +77,7 @@ else:
     if configured_model:
         model_candidates.append(configured_model)
     # Prefer pre-cached offline models on machine, then fall back cleanly
-    for candidate in ("tiny.en", "base.en", "large-v3-turbo"):
+    for candidate in ("base", "base.en", "tiny.en", "large-v3-turbo"):
         if candidate not in model_candidates:
             model_candidates.append(candidate)
 
@@ -539,16 +539,15 @@ def transcribe_bytes(audio_bytes: bytes, filename: str = "audio.wav") -> str:
             segments, info = whisper_model.transcribe(
                 wav_io,
                 language=language,
-                beam_size=3,
+                beam_size=5,
                 vad_filter=True,
-                vad_parameters=dict(min_silence_duration_ms=400),
+                vad_parameters=dict(min_silence_duration_ms=450),
                 condition_on_previous_text=False,
-                temperature=0,
+                temperature=0.0,
                 initial_prompt=(
-                    "Indian English, including regional Indian accents. Siddaganga Institute of Technology, SIT, Tumakuru, Karnataka. "
-                    "Campus guide words: principal, departments, placements, admissions, "
-                    "KCET, COMEDK, hostels, fees, library, labs, and college facilities. "
-                    "Wake phrase: Hey Robo."
+                    "Conversational Indian English. Siddaganga Institute of Technology, SIT Tumakuru, Karnataka. "
+                    "Campus guide: engineering admissions, placements, departments, coding, science, technology, general questions. "
+                    "Wake word: Hey Robo."
                 ),
             )
             w_text = " ".join(s.text for s in segments).strip()

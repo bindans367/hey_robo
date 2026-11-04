@@ -301,7 +301,7 @@ def answer_query(query, matcher, source="dashboard"):
                 "playful": "Use a light, playful campus-guide voice, but keep factual answers respectful and never let humor obscure the facts.",
             }.get(settings["conversation"].get("mood", "friendly"), "Use a warm, friendly campus-guide voice.")
             # High confidence local match bypasses cloud call to eliminate latency and save tokens
-            if mode == "online" and local_result.get("matched") and float(local_result.get("confidence", 0)) >= 92.0:
+            if mode == "online" and local_result.get("matched") and float(local_result.get("confidence", 0)) >= 98.0:
                 result = dict(local_result)
                 result["mode"] = "online"
                 result["title"] = "SIT Verified Knowledge"
@@ -312,15 +312,19 @@ def answer_query(query, matcher, source="dashboard"):
             parsed_endpoint = urlparse(base_url)
             is_ollama = mode == "local" and local_endpoint and parsed_endpoint.port == 11434
 
-            # Include concise instructions for real-time natural conversational speech
+            # Universal voice-optimized instructions (strictly 2 sentences max, under 40 words)
             concise_rules = (
-                "CONVERSATION INSTRUCTIONS FOR SPOKEN VOICE:\n"
-                "- Keep answers short and concise (1 to 3 sentences maximum, under 50 words).\n"
-                "- Answer the question directly in simple, clear, natural spoken language.\n"
-                "- Never use markdown formatting (no asterisks, no bullet points, no bold, no headers).\n"
-                "- Be polite, friendly and helpful as Robo, the SIT campus guide."
+                "VOICE RESPONSE FORMAT INSTRUCTIONS:\n"
+                "- Answer in EXACTLY TWO short sentences maximum (under 40 words total).\n"
+                "- Speak directly, clearly, and conversationally in simple spoken English.\n"
+                "- NEVER use markdown formatting: no asterisks, no bullet points, no bold, no headers.\n"
+                "- Answer ANY question on general knowledge, science, coding, technology, history, or casual conversation.\n"
+                "- When the question is about SIT Tumakuru, prioritize the verified campus context provided below. Never invent SIT facts.\n"
+                "- If requested real-time or live data is unavailable, clearly state so in one sentence."
             )
-            system_msg = settings["system_prompt"] + "\n\n" + concise_rules + "\n\n" + mood_instruction + "\n\nRelevant local SIT knowledge:\n" + context
+            system_msg = settings["system_prompt"] + "\n\n" + concise_rules + "\n\n" + mood_instruction
+            if local_result.get("matched") and context:
+                system_msg += "\n\nSupplementary verified SIT campus context:\n" + context
 
             # Multi-turn context: include up to 2 recent exchanges
             recent_turns = [h for h in get_history(limit=6) if h.get("kind") == "conversation" and h.get("text") and h.get("answer")]
@@ -335,7 +339,7 @@ def answer_query(query, matcher, source="dashboard"):
                 payload = {"model": llm["model"], "think": False, "stream": False, "messages": conversation_messages, "options": {"temperature": 0.3}}
             else:
                 url = base_url + "/chat/completions"
-                payload = {"model": llm["model"], "messages": conversation_messages, "temperature": 0.3, "max_tokens": 150}
+                payload = {"model": llm["model"], "messages": conversation_messages, "temperature": 0.3, "max_tokens": 100}
             headers = {"Content-Type": "application/json"}
             if key:
                 headers["Authorization"] = "Bearer " + key
