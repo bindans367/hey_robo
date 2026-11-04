@@ -75,6 +75,113 @@ def _announce_answer_mode(result):
         result["answer"] = result["notice"] + " " + result.get("answer", "")
 
 
+def run_ghost_mode():
+    """
+    GHOST MODE for SIT Humanoid Robot:
+    1. On startup, enter SLEEP mode.
+    2. Keep lightweight LOCAL wake-word detector active (0 tokens, 0 cloud calls).
+    3. Detect exact phrase 'Hey Robo'.
+    4. On detection, immediately play a short wake-up beep.
+    5. Activate microphone recording.
+    6. Use existing Whisper/Faster-Whisper STT.
+    7. Send recognized questions to existing Gemini API.
+    8. Generate concise answers and speak through existing TTS.
+    9. After completing the answer, stop active transcription and return to SLEEP.
+    10. Keep only local wake-word detection active.
+    11. Repeat indefinitely.
+    """
+    import voice_engine
+
+    microphone = get_settings()["microphone"]
+    voice_engine.MIC_DEVICE_INDEX = None if microphone["device_index"] < 0 else microphone["device_index"]
+    voice_engine.recognizer.energy_threshold = microphone["energy_threshold"]
+    voice_engine.calibrate_microphone()
+
+    print_banner(mode="GHOST MODE (SLEEP & WAKE-WORD)", topic_count=len(matcher.knowledge) + len(matcher.website_pages))
+
+    conversation = get_settings()["conversation"]
+
+    # 1. On startup: Enter SLEEP mode silently
+    show_robot_state("SLEEP", "Ghost Mode active: Sleeping. Say 'Hey Robo' to wake.")
+    publish_runtime("SLEEP", detail="Ghost Mode: Sleeping silently. Waiting locally for 'Hey Robo'.")
+
+    try:
+        while True:
+            # 2. Local wake-word detection (No Whisper, No Gemini)
+            woken = voice_engine.listen_for_wake_word(timeout=30)
+            if not woken:
+                continue
+
+            # 4. Immediate wake-up beep
+            print("\n  [GHOST] Wake phrase 'Hey Robo' detected! Waking up...", flush=True)
+            voice_engine.play_wake_beep()
+
+            # 5. Activate microphone recording
+            show_robot_state("LISTENING", "Awake! Listening to your question...")
+            publish_runtime("LISTENING", detail="Awake! Listening to your question. Whisper will transcribe...")
+
+            # 6. Whisper STT
+            user_speech = voice_engine.listen(timeout=conversation["listen_timeout"], phrase_time_limit=conversation["phrase_time_limit"])
+
+            if not user_speech:
+                print("  [GHOST] No speech heard after wake-up. Returning to sleep.", flush=True)
+                show_robot_state("SLEEP", "Ghost Mode: Sleeping (say 'Hey Robo' to wake)")
+                publish_runtime("SLEEP", detail="No question heard. Returning to sleep.")
+                continue
+
+            command = re.sub(r"[^\w\s]", " ", user_speech.lower())
+            command = " ".join(command.split())
+            publish_runtime("TRANSCRIPT", transcript=user_speech, detail="Speech recognized.")
+
+            # Stop phrases
+            stop_phrases = conversation.get("stop_phrases", ["robo stop", "stop", "exit", "quit", "sleep"])
+            if any(command == phrase or command.startswith(phrase + " ") for phrase in stop_phrases):
+                farewell = conversation.get("farewell", "Going back to sleep.")
+                show_robot_state("SPEAKING", "Bidding farewell...")
+                publish_runtime("SPEAKING", transcript=user_speech, answer=farewell)
+                voice_engine.speak(farewell)
+                time.sleep(0.8)
+                show_robot_state("SLEEP", "Ghost Mode: Sleeping (say 'Hey Robo' to wake)")
+                publish_runtime("SLEEP", detail="Ghost Mode: Sleeping. Say 'Hey Robo' to wake.")
+                continue
+
+            # If user said 'hey robo' at the start of question, strip it
+            for wp in conversation.get("wake_phrases", ["hey robo", "hey robot"]):
+                if command.startswith(wp):
+                    command = command[len(wp):].strip()
+
+            if not command:
+                prompt_reply = conversation.get("wake_reply", "I'm listening. Ask me about SIT.")
+                publish_runtime("SPEAKING", answer=prompt_reply)
+                voice_engine.speak(prompt_reply)
+                user_speech = voice_engine.listen(timeout=conversation["listen_timeout"], phrase_time_limit=conversation["phrase_time_limit"])
+                if not user_speech:
+                    show_robot_state("SLEEP", "Ghost Mode: Sleeping")
+                    publish_runtime("SLEEP", detail="Ghost Mode: Sleeping.")
+                    continue
+                command = user_speech
+
+            # 7 & 8. Gemini API & TTS
+            publish_runtime("THINKING", transcript=user_speech, detail="Thinking...")
+            result = answer_query(command, matcher, source="ghost_mode")
+            answer = result.get("answer", "")
+
+            show_robot_state("SPEAKING", "Speaking response...")
+            publish_runtime("SPEAKING", transcript=user_speech, answer=answer, title=result.get("title", ""))
+            voice_engine.speak(answer)
+
+            # 9. Return to SLEEP after completing answer
+            print("  [GHOST] Answer finished. Returning to SLEEP.\n", flush=True)
+            time.sleep(0.8)  # Reverb / echo cool-down
+            show_robot_state("SLEEP", "Ghost Mode: Sleeping (say 'Hey Robo' to wake)")
+            publish_runtime("SLEEP", detail="Ghost Mode: Sleeping silently. Say 'Hey Robo' to wake.")
+
+    except KeyboardInterrupt:
+        print("\n[GHOST] Ghost Mode terminated by user.")
+    finally:
+        publish_runtime("STOPPED", detail="Ghost Mode stopped.")
+
+
 def run_voice_mode(push_to_talk: bool = False):
     """Voice interaction loop for humanoid robot (continuous or push-to-talk)."""
     import voice_engine
@@ -277,6 +384,7 @@ def run_self_test():
 def main():
     parser = argparse.ArgumentParser(description="SIT Humanoid Robot Offline Campus Assistant")
     parser.add_argument("--text", action="store_true", help="Launch interactive text mode")
+    parser.add_argument("--ghost", action="store_true", help="Launch in Ghost Mode (dormant sleep, wake on 'Hey Robo', auto-sleep)")
     parser.add_argument("--ptt", "--push-to-talk", action="store_true", help="Enable push-to-talk mode (press Enter to speak)")
     parser.add_argument("--mic", type=int, metavar="DEVICE_INDEX", help="Select a PortAudio microphone device (default: Windows default input)")
     parser.add_argument("--test", action="store_true", help="Run automated pronunciation test suite")
@@ -301,6 +409,11 @@ def main():
         ingest_pdf.ingest_file(args.ingest)
     elif args.test:
         run_self_test()
+    elif args.ghost:
+        import voice_engine
+        if args.mic is not None:
+            voice_engine.MIC_DEVICE_INDEX = args.mic
+        run_ghost_mode()
     elif args.text:
         import voice_engine
         if args.mic is not None:

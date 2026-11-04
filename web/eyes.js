@@ -51,6 +51,7 @@
 
     // The dashboard can speak a script even when the hands-free bot is stopped.
     // Honor those live speech phases, then use process state for idle/listening.
+    if (phase === "SLEEP") return showState("sleeping", "Ghost Mode: Say “Hey Robo” to wake me");
     if (phase === "SPEAKING" && (robot.running || fresh)) return showState("speaking", "Robo is speaking");
     if ((phase === "THINKING" || phase === "TRANSCRIPT") && robot.running) return showState("thinking", "Robo is thinking");
     if ((phase === "GREETING" || phase === "STARTING") && robot.running) return showState("waking", phase === "GREETING" ? "Robo is saying hello" : "Robo is waking up");

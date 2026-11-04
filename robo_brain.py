@@ -117,6 +117,8 @@ def start_robot(mode="voice"):
         command = [sys.executable, os.path.join(ROOT, "bot.py")]
         if mode == "ptt":
             command.append("--ptt")
+        elif mode == "ghost":
+            command.append("--ghost")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         child_env = os.environ.copy()
         child_env.pop("HUMANOID_TTS_ONLY", None)
@@ -201,6 +203,27 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"history": core.get_history(1000)})
         if path == "/api/status":
             return self.send_json({"robot": robot_status()})
+        if path == "/api/wake-beep":
+            import wave, io, numpy as np
+            buf = io.BytesIO()
+            sample_rate = 16000
+            t = np.linspace(0, 0.25, int(sample_rate * 0.25), endpoint=False)
+            sine = (np.sin(2 * np.pi * 1046 * t) * 18000).astype(np.int16)
+            fade_len = int(sample_rate * 0.015)
+            sine[-fade_len:] = (sine[-fade_len:] * np.linspace(1, 0, fade_len)).astype(np.int16)
+            with wave.open(buf, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(sample_rate)
+                wf.writeframes(sine.tobytes())
+            audio_bytes = buf.getvalue()
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/wav")
+            self.send_header("Content-Length", str(len(audio_bytes)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(audio_bytes)
+            return
         if path == "/api/health":
             return self.send_json({"status": "healthy", "service": "robo_brain", "version": "2.0.0"})
         if path == "/api/tts":
@@ -369,7 +392,8 @@ class Handler(BaseHTTPRequestHandler):
                 core.clear_history()
                 return self.send_json({"ok": True, "history": []})
             if path == "/api/robot/start":
-                mode = "ptt" if data.get("mode") == "ptt" else "voice"
+                req_mode = data.get("mode", "ghost")
+                mode = "ptt" if req_mode == "ptt" else "voice" if req_mode == "voice" else "ghost"
                 return self.send_json({"ok": True, "robot": start_robot(mode)})
             if path == "/api/robot/stop":
                 core.request_speech_abort()

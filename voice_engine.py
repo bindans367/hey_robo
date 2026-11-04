@@ -350,8 +350,19 @@ def _set_tts_status(settings, provider, fallback_reason=""):
                              "fallback": bool(fallback_reason), "reason": str(fallback_reason)[:240]})
 
 
+_tts_is_speaking = False
+_last_tts_end_time = 0.0
+
+
+def is_tts_active() -> bool:
+    """True if robot TTS is currently speaking or finished within 0.8s (prevents self-wake)."""
+    return _tts_is_speaking or (time.time() - _last_tts_end_time < 0.8)
+
+
 def speak(text: str, log_callback=None):
     """Speak using the current saved voice settings and report fallback clearly."""
+    global _tts_is_speaking, _last_tts_end_time
+    _tts_is_speaking = True
     spoken_text = clean_text_for_speech(text)
     if log_callback:
         log_callback(text)
@@ -391,6 +402,8 @@ def speak(text: str, log_callback=None):
         tts_engine.say(spoken_text)
         tts_engine.runAndWait()
         _set_tts_status(settings, "system", fallback_reason)
+        _last_tts_end_time = time.time()
+        _tts_is_speaking = False
         return True
     except Exception as e:
         print(f"[TTS ERROR] Speech output failed: {type(e).__name__}: {e}", file=sys.stderr)
@@ -408,6 +421,9 @@ def speak(text: str, log_callback=None):
             _set_tts_status(settings, "unavailable", fallback_reason or str(fallback_error))
             print(f"[TTS ERROR] Fallback speech output failed: {fallback_error}", file=sys.stderr)
             return False
+        finally:
+            _last_tts_end_time = time.time()
+            _tts_is_speaking = False
 
 
 def _apply_pyttsx_voice(settings):
@@ -640,6 +656,99 @@ def transcribe_audio(audio_data: sr.AudioData) -> str:
             print(f"[WARN] Vosk transcribe error: {e}", file=sys.stderr)
 
     return ""
+
+
+def play_wake_beep():
+    """Play a crisp, immediate wake-up beep (High C 1046 Hz, ~300ms) on detection."""
+    try:
+        if os.name == "nt":
+            import winsound
+            winsound.Beep(1046, 300)
+        else:
+            print("\a", flush=True)
+    except Exception:
+        print("\a", flush=True)
+
+
+def listen_for_wake_word(timeout: float = None, sensitivity: float = 0.5) -> bool:
+    """
+    Lightweight, offline local wake-word detector.
+    Listens exclusively for 'Hey Robo' (and close phonetics) using Vosk Kaldi grammar.
+    Consumes ~1% CPU, 0 cloud tokens, 0 Gemini/Whisper calls while sleeping.
+    Suppresses self-echo while robot is speaking.
+    """
+    global vosk_model
+    if vosk_model is None:
+        if os.path.isdir(VOSK_MODEL_PATH):
+            try:
+                vosk_model = Model(VOSK_MODEL_PATH)
+            except Exception:
+                pass
+        if vosk_model is None:
+            time.sleep(1.0)
+            return False
+
+    import pyaudio
+    p = pyaudio.PyAudio()
+    grammar = '["hey robo", "hey robot", "hello robo", "hello robot", "[unk]"]'
+    rec = KaldiRecognizer(vosk_model, 16000, grammar)
+    rec.SetWords(False)
+
+    stream = None
+    try:
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=16000,
+            input=True,
+            frames_per_buffer=2048,
+        )
+        stream.start_stream()
+
+        start_time = time.time()
+        while True:
+            if timeout and (time.time() - start_time > timeout):
+                return False
+
+            # Prevent false wake-ups while robot speaks its own TTS
+            if is_tts_active():
+                try:
+                    stream.read(2048, exception_on_overflow=False)
+                except Exception:
+                    pass
+                time.sleep(0.05)
+                continue
+
+            try:
+                data = stream.read(2048, exception_on_overflow=False)
+            except Exception:
+                continue
+
+            if not data:
+                continue
+
+            if rec.AcceptWaveform(data):
+                res = json.loads(rec.Result())
+                text = res.get("text", "").lower()
+                if "hey robo" in text or "hey robot" in text or "hello robo" in text:
+                    return True
+            else:
+                partial = json.loads(rec.PartialResult()).get("partial", "").lower()
+                if "hey robo" in partial or "hey robot" in partial:
+                    return True
+
+    except Exception as exc:
+        print(f"[WAKE-WORD ERROR] {exc}", file=sys.stderr)
+        time.sleep(0.5)
+        return False
+    finally:
+        if stream:
+            try:
+                stream.stop_stream()
+                stream.close()
+            except Exception:
+                pass
+        p.terminate()
 
 
 def play_wake_sound():
