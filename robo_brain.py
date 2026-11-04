@@ -186,7 +186,14 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         if length > 2_000_000:
             raise ValueError("Request is too large")
-        data = json.loads(self.rfile.read(length).decode("utf-8"))
+        raw = self.rfile.read(length)
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            try:
+                data = json.loads(raw.decode("utf-8", errors="replace"))
+            except Exception:
+                raise ValueError("Expected a valid JSON object")
         if not isinstance(data, dict):
             raise ValueError("Expected a JSON object")
         return data
@@ -273,7 +280,7 @@ class Handler(BaseHTTPRequestHandler):
         content_type = self.headers.get("Content-Type", "").lower()
         length = int(self.headers.get("Content-Length", "0"))
         try:
-            if path in ("/api/transcribe", "/api/ask-voice") and (content_type.startswith("audio/") or content_type.startswith("application/octet-stream")):
+            if path in ("/api/transcribe", "/api/ask-voice"):
                 if length > 25_000_000:
                     return self.send_json({"error": "Audio file too large"}, 400)
                 audio_bytes = self.rfile.read(length)
