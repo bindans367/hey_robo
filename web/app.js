@@ -28,11 +28,65 @@ function go(page) {
   if (page === "knowledge") renderKnowledge();
   window.scrollTo({top:0,behavior:"smooth"});
 }
+// ── Gemini Quick Connect Banner ──────────────────────────────────────────────
+function updateBanner(settings) {
+  const banner = $("#gemini-banner");
+  if (!banner) return;
+  const isOnline = settings.mode === "online";
+  const hasKey   = !!(settings.online && settings.online.api_key_set);
+  if (isOnline && hasKey) {
+    banner.classList.add("connected");
+    banner.classList.remove("hidden");
+    const strong = banner.querySelector(".gemini-banner-left strong");
+    const small  = banner.querySelector(".gemini-banner-left small");
+    if (strong) strong.textContent = "\u2713 Gemini is connected";
+    if (small)  small.textContent  = "Robo is using Gemini AI for answers.";
+    setTimeout(() => banner.classList.add("hidden"), 4000);
+  } else {
+    banner.classList.remove("hidden", "connected");
+  }
+}
+(function initBanner() {
+  const banner     = $("#gemini-banner");
+  const keyInput   = $("#banner-key-input");
+  const connectBtn = $("#banner-connect-btn");
+  const dismissBtn = $("#banner-dismiss");
+  if (!banner || !keyInput) return;
+  keyInput.addEventListener("input", () => {
+    connectBtn.disabled = keyInput.value.trim().length < 10;
+  });
+  connectBtn.addEventListener("click", async () => {
+    const key = keyInput.value.trim();
+    if (!key) return;
+    setBusy(connectBtn, true, "Connecting\u2026");
+    try {
+      const existing = state.settings || {};
+      const payload = Object.assign({}, existing, {
+        mode: "online",
+        online: Object.assign({}, existing.online || {}, {
+          base_url: (existing.online || {}).base_url || "https://generativelanguage.googleapis.com/v1beta/openai",
+          model:    (existing.online || {}).model    || "gemini-2.0-flash-lite",
+          api_key:  key
+        })
+      });
+      const data = await api("/api/settings", { settings: payload });
+      applySettings(data.settings);
+      toast("\u2713 Gemini connected! Robo is now using cloud AI.");
+    } catch(err) {
+      toast("Connection failed: " + err.message, true);
+      setBusy(connectBtn, false);
+    }
+  });
+  if (dismissBtn) dismissBtn.addEventListener("click", () => banner.classList.add("hidden"));
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 function applySettings(settings) {
   state.settings = settings;
   const modeLabel = settings.mode === "online" ? "Gemini / cloud AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
   $("#mode-badge").innerHTML = `<i></i> ${modeLabel}`;
   $("#mode-badge").classList.toggle("online", settings.mode === "online");
+  updateBanner(settings);
   const voice = settings.voice || {};
   const selectedVoiceId = voice.provider === "system" ? "system" : (voice.voice_id || "en-IN-NeerjaNeural");
   if (![...$("#tts-voice").options].some(option => option.value === selectedVoiceId)) {
@@ -231,6 +285,17 @@ $("#tts-voice").addEventListener("change",updateRangeLabels);
 ["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
 document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
 $("#cloud-provider").addEventListener("change",()=>{if($("#cloud-provider").value==="gemini"){$("#online-url").value="https://generativelanguage.googleapis.com/v1beta/openai";$("#online-model").value="gemini-3.8-flash";}});
+// Auto-switch to Cloud AI mode when user starts typing a key in the settings panel
+$("#online-key").addEventListener("input", () => {
+  if ($("#online-key").value.trim().length >= 10) {
+    const onlineRadio = document.querySelector('input[name="answer-mode"][value="online"]');
+    if (onlineRadio && !onlineRadio.checked) {
+      onlineRadio.checked = true;
+      toggleOnlineFields();
+      toast("Cloud AI selected. Save settings to apply your key.");
+    }
+  }
+});
 $("#save-settings").addEventListener("click",e=>saveSettings(e.currentTarget));$("#save-settings-bottom").addEventListener("click",e=>saveSettings(e.currentTarget));
 $("#test-voice").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Applying voice…");try{if(!await saveSettings($("#save-settings")))return;setBusy(btn,true,"Speaking…");const result=await api("/api/speak",{text:"Hello, I am Robo, your campus guide. How can I help you today?"});if(result.spoken===false)throw new Error("Speech playback failed. Check the selected voice and audio output.");const status=result.voice_status||{};if(status.fallback)toast(`Windows voice used because ${status.voice_id||"the neural voice"} failed: ${status.reason}`,true);else toast(`Voice sample played using ${status.used_voice||status.voice_id||"saved voice settings"}.`);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#test-online").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="online"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"online"});toast(result.message||"Cloud connection is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});

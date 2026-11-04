@@ -29,6 +29,23 @@
       <div class="content">
         <section class="page active" id="page-overview">
           <div class="welcome-row"><div><div class="eyebrow">YOUR ROBOT · YOUR RULES</div><h1>Good day. <span>Let’s tune Robo.</span></h1><p class="lead">Keep answers accurate, make Robo sound the way you want, and manage every conversation from one place.</p></div><div class="orb-wrap"><div class="orb"><div class="orb-eye left"></div><div class="orb-eye right"></div><div class="orb-smile"></div></div><span class="orb-tag" id="robot-status-badge"><i></i> CONTROL PANEL READY</span></div></div>
+          <!-- Gemini Quick Connect Banner — hidden once key is set & mode is online -->
+          <div class="gemini-banner" id="gemini-banner">
+            <div class="gemini-banner-left">
+              <span class="gemini-banner-icon">✦</span>
+              <div>
+                <strong>Connect Gemini AI</strong>
+                <small>Paste your Google AI Studio key to switch Robo to smart online answers instantly.</small>
+              </div>
+            </div>
+            <div class="gemini-banner-right">
+              <input id="banner-key-input" class="banner-key-field" type="password"
+                     autocomplete="new-password" placeholder="Paste your Gemini API key here…" spellcheck="false">
+              <button class="primary-button" id="banner-connect-btn" disabled>Connect →</button>
+              <button class="icon-button" id="banner-dismiss" title="Dismiss">×</button>
+            </div>
+          </div>
+
           <div class="stat-grid"><article class="stat-card"><div class="stat-top"><span class="stat-icon lavender">▤</span><span class="stat-note">editable, anytime</span></div><strong id="stat-knowledge">—</strong><span>knowledge answers</span><div class="stat-line"><i></i></div></article><article class="stat-card"><div class="stat-top"><span class="stat-icon mint">◷</span><span class="stat-note">saved on this device</span></div><strong id="stat-history">—</strong><span>recent interactions</span><div class="stat-line mint-line"><i></i></div></article><article class="stat-card"><div class="stat-top"><span class="stat-icon peach">◖</span><span class="stat-note">ready to speak</span></div><strong id="stat-voice">Female</strong><span id="stat-voice-detail">Natural pace · default tone</span><div class="stat-line peach-line"><i></i></div></article></div>
           <div class="runtime-card"><div class="runtime-indicator" id="runtime-indicator"><span></span></div><div class="runtime-copy"><strong id="runtime-title">Robot conversation is stopped</strong><small id="runtime-detail">Start the microphone assistant to let students talk with Robo.</small></div><select id="robot-run-mode" aria-label="Robot listening mode"><option value="ghost" selected>Ghost mode (Sleep &amp; Wake on "Hey Robo")</option><option value="voice">Hands-free voice</option><option value="ptt">Push to talk</option></select><button class="primary-button" id="robot-start">Start listening</button><button class="secondary-button hidden" id="robot-stop">Stop robot</button></div>
           <div class="live-monitor"><div class="live-monitor-head"><div><div class="eyebrow">LIVE ROBOT FEED</div><h2>What Robo hears and says</h2><p id="live-detail">Start listening to see the current activity here.</p></div><div class="live-phase" id="live-phase"><i></i><span>STOPPED</span></div></div><div class="live-columns"><article class="live-pane"><div class="live-pane-label"><span>STUDENT · TRANSCRIPT</span><i>◉</i></div><p id="live-transcript">The recognized words will appear here after each utterance.</p></article><article class="live-pane answer-pane"><div class="live-pane-label"><span>ROBO · CURRENT ANSWER</span><i>◖</i></div><strong id="live-title"></strong><p id="live-answer">Robo’s latest response will appear here.</p></article></div><div class="live-monitor-actions"><span id="live-updated">Live state refreshes automatically.</span><div class="live-actions"><button class="secondary-button hidden" id="repeat-answer">↻ Repeat last answer</button><button class="danger-button hidden" id="abort-speech">■ Stop speech now</button></div></div></div>
