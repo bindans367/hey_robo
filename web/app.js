@@ -30,9 +30,11 @@ function go(page) {
 }
 function applySettings(settings) {
   state.settings = settings;
-  const modeLabel = settings.mode === "online" ? "Gemini / cloud AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
+  const isOnline = settings.mode === "online";
+  const modeLabel = isOnline ? "Online · Gemini AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
   $("#mode-badge").innerHTML = `<i></i> ${modeLabel}`;
-  $("#mode-badge").classList.toggle("online", settings.mode === "online");
+  $("#mode-badge").classList.toggle("online", isOnline);
+  $("#mode-badge").title = isOnline ? "Current: Online (Gemini AI) — Click to switch to Offline" : "Current: Offline — Click to switch to Online";
   const voice = settings.voice || {};
   const selectedVoiceId = voice.provider === "system" ? "system" : (voice.voice_id || "en-IN-NeerjaNeural");
   if (![...$("#tts-voice").options].some(option => option.value === selectedVoiceId)) {
@@ -249,6 +251,59 @@ $("#test-local").addEventListener("click",async e=>{document.querySelector('inpu
 $("#clear-history").addEventListener("click",async()=>{if(!confirm("Clear all saved conversation and speech history?"))return;try{await api("/api/history/clear",{});state.history=[];renderHistory();toast("History cleared.");}catch(e){toast(e.message,true);}});
 $("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Starting…");try{const r=await api("/api/robot/start",{mode:$("#robot-run-mode").value});renderRobotStatus(r.robot);toast("Robo’s microphone assistant has started.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+
+  // Mode badge click toggles between online and offline
+  $("#mode-badge").addEventListener("click", async () => {
+    const currentMode = state.settings?.mode || "offline";
+    const nextMode = currentMode === "online" ? "offline" : "online";
+    try {
+      const payload = Object.assign({}, state.settings || {}, { mode: nextMode });
+      const data = await api("/api/settings", { settings: payload });
+      applySettings(data.settings);
+      toast(nextMode === "online" ? "✓ Switched to Online (Gemini AI)" : "✓ Switched to Offline SIT Brain");
+    } catch (err) {
+      toast("Mode switch failed: " + err.message, true);
+    }
+  });
+
+  // Topbar quick test button
+  const quickTestBtn = $("#quick-test-gemini-btn");
+  if (quickTestBtn) {
+    quickTestBtn.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      setBusy(btn, true, "Testing…");
+      try {
+        if (state.settings?.mode !== "online") {
+          const payload = Object.assign({}, state.settings || {}, { mode: "online" });
+          const data = await api("/api/settings", { settings: payload });
+          applySettings(data.settings);
+        }
+        const result = await api("/api/online/test", { mode: "online" });
+        toast(result.message || "✓ Gemini online connection is working!");
+      } catch (err) {
+        toast("Gemini test failed: " + err.message, true);
+      } finally {
+        setBusy(btn, false);
+      }
+    });
+  }
+
+  // Ask Test Gemini Bot Button in quick chat
+  const askTestBtn = $("#ask-test-gemini-btn");
+  if (askTestBtn) {
+    askTestBtn.addEventListener("click", () => {
+      $("#ask-input").value = "Tell me about SIT Tumakuru campus and why it is special.";
+      $("#ask-form").dispatchEvent(new Event("submit"));
+    });
+  }
+
+  // Quick ask chip clicks
+  document.querySelectorAll(".quick-chip[data-q]").forEach(chip => {
+    chip.addEventListener("click", () => {
+      $("#ask-input").value = chip.dataset.q;
+      $("#ask-form").dispatchEvent(new Event("submit"));
+    });
+  });
 
 refreshAll();
 let statusInFlight = false;
