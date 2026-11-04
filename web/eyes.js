@@ -65,15 +65,26 @@
     showState("offline", "Robo is resting", false);
   }
 
+  let eyesFailures = 0;
+  let eyesInFlight = false;
   async function poll() {
+    if (eyesInFlight) return;
+    eyesInFlight = true;
+    let nextDelay = 400;
     try {
       const response = await fetch("/api/status", {cache: "no-store"});
       if (!response.ok) throw new Error("status unavailable");
+      eyesFailures = 0;
       handleStatus(await response.json());
+      nextDelay = 400;
     } catch (_) {
+      eyesFailures++;
       showState("offline", "Waiting for Robo Brain", false);
+      // Exponential backoff up to 8s when backend is down
+      nextDelay = Math.min(8000, 400 * Math.pow(1.5, eyesFailures));
     } finally {
-      window.setTimeout(poll, 400);
+      eyesInFlight = false;
+      window.setTimeout(poll, nextDelay);
     }
   }
 

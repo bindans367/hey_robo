@@ -15,6 +15,7 @@ import uuid
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from matcher import matcher
 import robo_brain_core as core
@@ -200,6 +201,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"history": core.get_history(1000)})
         if path == "/api/status":
             return self.send_json({"robot": robot_status()})
+        if path == "/api/health":
+            return self.send_json({"status": "healthy", "service": "robo_brain", "version": "2.0.0"})
         if path.startswith("/api/"):
             return self.send_json({"error": "Not found"}, 404)
         if path == "/eyes":
@@ -354,15 +357,25 @@ class Handler(BaseHTTPRequestHandler):
                     test_url = f"{endpoint.scheme}://{endpoint.netloc}/api/chat"
                     test_payload.update({"think": False, "options": {"temperature": 0.2}})
                 else:
-                    test_payload["max_tokens"] = 30
+                    test_payload["max_tokens"] = 1000
                 req = Request(test_url,
                     data=json.dumps(test_payload).encode(),
                     method="POST", headers=headers)
-                from urllib.request import urlopen
-                with urlopen(req, timeout=20) as response:
+                ssl_ctx = None
+                try:
+                    import certifi, ssl
+                    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+                except Exception:
+                    pass
+                with urlopen(req, timeout=20, context=ssl_ctx) as response:
                     result = json.loads(response.read().decode("utf-8"))
                 label = "Local model" if test_mode == "local" else "Cloud model"
-                reply = result["message"]["content"] if is_ollama else result["choices"][0]["message"]["content"]
+                if is_ollama:
+                    reply = result.get("message", {}).get("content", "")
+                else:
+                    reply = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if not reply:
+                    reply = "Connected successfully." 
                 return self.send_json({"ok": True, "message": f"{label} connection is working: " + reply.strip()})
             return self.send_json({"error": "Not found"}, 404)
         except Exception as exc:

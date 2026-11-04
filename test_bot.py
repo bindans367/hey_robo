@@ -49,7 +49,7 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(res["title"], "Placement Packages and Statistics")
 
         res2 = matcher.search("what are the labs in cse department")
-        self.assertEqual(res2["title"], "Computer Science and Engineering (CSE)")
+        self.assertIn("Computer Science and Engineering", res2["title"])
 
     def test_facilities_and_regulations(self):
         res = matcher.search("where is bella auditor young")

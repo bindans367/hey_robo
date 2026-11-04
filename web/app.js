@@ -240,6 +240,24 @@ $("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;s
 $("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 
 refreshAll();
-setInterval(refreshRobotStatus,900);
+let statusInFlight = false;
+let statusFailures = 0;
+async function guardedRefreshStatus() {
+  if (statusInFlight) return;
+  statusInFlight = true;
+  try {
+    const s = await api("/api/status");
+    statusFailures = 0;
+    renderRobotStatus(s.robot);
+  } catch (err) {
+    statusFailures++;
+  } finally {
+    statusInFlight = false;
+    // Exponential backoff: 900ms when healthy, up to 10s if backend is unreachable
+    const nextDelay = statusFailures === 0 ? 900 : Math.min(10000, 900 * Math.pow(1.5, statusFailures));
+    setTimeout(guardedRefreshStatus, nextDelay);
+  }
+}
+setTimeout(guardedRefreshStatus, 900);
 setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-overview").classList.contains("active"))refreshHistory();},12000);
 
