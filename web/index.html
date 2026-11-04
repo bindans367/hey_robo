@@ -34,6 +34,59 @@
           <div class="live-monitor"><div class="live-monitor-head"><div><div class="eyebrow">LIVE ROBOT FEED</div><h2>What Robo hears and says</h2><p id="live-detail">Start listening to see the current activity here.</p></div><div class="live-phase" id="live-phase"><i></i><span>STOPPED</span></div></div><div class="live-columns"><article class="live-pane"><div class="live-pane-label"><span>STUDENT · TRANSCRIPT</span><i>◉</i></div><p id="live-transcript">The recognized words will appear here after each utterance.</p></article><article class="live-pane answer-pane"><div class="live-pane-label"><span>ROBO · CURRENT ANSWER</span><i>◖</i></div><strong id="live-title"></strong><p id="live-answer">Robo’s latest response will appear here.</p></article></div><div class="live-monitor-actions"><span id="live-updated">Live state refreshes automatically.</span><div class="live-actions"><button class="secondary-button hidden" id="repeat-answer">↻ Repeat last answer</button><button class="danger-button hidden" id="abort-speech">■ Stop speech now</button></div></div></div>
           <div class="section-head"><div><div class="eyebrow">CONTROL CENTER</div><h2>What would you like to do?</h2></div></div>
           <div class="action-grid"><button class="action-card" data-go="knowledge"><span class="action-icon violet">✎</span><span><strong>Correct or add an answer</strong><small>Update facts like the principal’s name in seconds.</small></span><span class="arrow">↗</span></button><button class="action-card" data-go="speak"><span class="action-icon blue">◖</span><span><strong>Give Robo a speech</strong><small>Paste a script and hear it spoken aloud.</small></span><span class="arrow">↗</span></button><button class="action-card" data-go="settings"><span class="action-icon coral">⚙</span><span><strong>Shape Robo’s voice</strong><small>Choose voice, pace, tone, and answer mode.</small></span><span class="arrow">↗</span></button></div>
+                    <div class="voice-assistant-card" id="voice-assistant-card">
+            <div class="voice-card-head">
+              <div>
+                <div class="eyebrow">TALK TO ROBO · WHISPER &amp; GEMINI</div>
+                <h2>Interactive Voice Assistant</h2>
+                <p>Speak naturally from any distance. Powered by Whisper STT, Gemini AI, and neural speech.</p>
+              </div>
+              <div class="voice-header-actions">
+                <label class="continuous-toggle" title="Keep conversation active without clicking">
+                  <input type="checkbox" id="continuous-voice-toggle" checked>
+                  <span class="toggle-track"></span> Continuous conversation
+                </label>
+                <div class="voice-badge" id="voice-status-badge"><i></i> <span>IDLE</span></div>
+              </div>
+            </div>
+
+            <div class="voice-center">
+              <button class="voice-mic-hero" id="voice-mic-hero" aria-label="Microphone Voice Assistant">
+                <div class="voice-mic-rings"></div>
+                <div class="voice-mic-core">
+                  <span class="voice-mic-icon">🎙</span>
+                </div>
+              </button>
+              <div class="voice-status-label" id="voice-status-label">Click to Start Conversation</div>
+              <div class="voice-vu-container" id="voice-vu-container" title="Audio sensitivity / Far-field speech level">
+                <div class="voice-vu-meter"><div class="voice-vu-fill" id="voice-vu-fill"></div></div>
+                <small id="voice-vu-text">Mic ready · Far-field AGC active</small>
+              </div>
+            </div>
+
+            <div class="voice-bubbles">
+              <div class="voice-bubble user-bubble" id="voice-user-bubble">
+                <div class="bubble-tag"><span>YOU HEARD</span> <i>◉</i></div>
+                <p id="voice-user-text">Your spoken words will appear here in real-time…</p>
+              </div>
+              <div class="voice-bubble bot-bubble" id="voice-bot-bubble">
+                <div class="bubble-tag"><span>ROBO ASSISTANT</span> <i>◖</i></div>
+                <p id="voice-bot-text">Robo’s spoken response will appear here…</p>
+                <div class="voice-speaking-wave hidden" id="voice-speaking-wave">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="voice-bottom-bar">
+              <div class="voice-hint">Tip: Ask questions about SIT departments, admissions, placements, or say <em>"Robo stop"</em> to pause.</div>
+              <div class="voice-actions-row">
+                <button class="danger-button hidden" id="voice-interrupt-btn">■ Interrupt / Stop</button>
+              </div>
+            </div>
+            <audio id="voice-player" preload="auto" class="hidden"></audio>
+          </div>
+
           <div class="quick-chat"><div class="quick-chat-head"><div><div class="eyebrow">TRY A QUESTION</div><h2>Ask Robo</h2></div><label class="speak-toggle"><input type="checkbox" id="ask-speak" checked><span class="toggle-track"></span> Speak answer</label></div><form id="ask-form"><input id="ask-input" autocomplete="off" placeholder="Ask a question or try a correction…"><button class="primary-button" id="ask-button">Ask Robo <span>→</span></button></form><div class="ask-result hidden" id="ask-result"></div></div>
           <div class="section-head history-head"><div><div class="eyebrow">LATEST ACTIVITY</div><h2>Recent conversations</h2></div><button class="text-link" data-go="history">View history <span>→</span></button></div>
           <div class="recent-list" id="recent-list"></div>

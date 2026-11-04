@@ -261,3 +261,357 @@ async function guardedRefreshStatus() {
 setTimeout(guardedRefreshStatus, 900);
 setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-overview").classList.contains("active"))refreshHistory();},12000);
 
+
+// ============================================================================
+// Interactive Human-Robot Voice Assistant (Whisper + Gemini + Neural TTS + Far-Field VAD)
+// ============================================================================
+(function initVoiceAssistant() {
+  const micHero = $("#voice-mic-hero");
+  const badge = $("#voice-status-badge");
+  const label = $("#voice-status-label");
+  const vuFill = $("#voice-vu-fill");
+  const vuText = $("#voice-vu-text");
+  const userText = $("#voice-user-text");
+  const botText = $("#voice-bot-text");
+  const wave = $("#voice-speaking-wave");
+  const interruptBtn = $("#voice-interrupt-btn");
+  const continuousToggle = $("#continuous-voice-toggle");
+  const player = $("#voice-player");
+
+  if (!micHero || !player) return;
+
+  let audioCtx = null;
+  let micStream = null;
+  let analyser = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let voiceState = "IDLE"; // "IDLE" | "LISTENING" | "PROCESSING" | "SPEAKING"
+  let vadActive = false;
+  let speechStartTime = 0;
+  let lastSpeechTime = 0;
+  let isSpeaking = false;
+  let ambientFloor = 0.02;
+  let silenceTimeoutMs = 1200;
+
+  function setVoiceUI(state, textMsg) {
+    voiceState = state;
+    badge.className = `voice-badge ${state.toLowerCase()}`;
+    badge.querySelector("span").textContent = state;
+    micHero.className = `voice-mic-hero ${state.toLowerCase()}`;
+    if (textMsg) label.textContent = textMsg;
+
+    interruptBtn.classList.toggle("hidden", state !== "SPEAKING");
+    wave.classList.toggle("hidden", state !== "SPEAKING");
+
+    if (state === "IDLE") {
+      vuFill.style.width = "0%";
+      vuText.textContent = "Mic ready · Far-field AGC active";
+    }
+  }
+
+  async function setupAudio() {
+    if (audioCtx && micStream) return true;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContextClass();
+
+      const source = audioCtx.createMediaStreamSource(micStream);
+      // High-pass filter cuts room rumble below 110 Hz
+      const highpass = audioCtx.createBiquadFilter();
+      highpass.type = "highpass";
+      highpass.frequency.value = 110;
+
+      // Far-field amplification gain (2.5x)
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 2.5;
+
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+
+      const dest = audioCtx.createMediaStreamDestination();
+
+      source.connect(highpass);
+      highpass.connect(gainNode);
+      gainNode.connect(analyser);
+      gainNode.connect(dest);
+
+      // Create MediaRecorder with supported mimeType
+      const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/wav"];
+      let selectedMime = "";
+      for (const mime of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mime)) {
+          selectedMime = mime;
+          break;
+        }
+      }
+
+      mediaRecorder = new MediaRecorder(dest.stream, selectedMime ? { mimeType: selectedMime } : {});
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+      mediaRecorder.onstop = handleRecordingComplete;
+
+      startVADLoop();
+      return true;
+    } catch (err) {
+      toast("Microphone access denied: " + err.message, true);
+      setVoiceUI("IDLE", "Microphone permission needed");
+      return false;
+    }
+  }
+
+  function startVADLoop() {
+    if (vadActive) return;
+    vadActive = true;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function checkAudio() {
+      if (!vadActive) return;
+      analyser.getByteTimeDomainData(dataArray);
+
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = (dataArray[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+
+      // Update VU meter UI
+      const meterPercent = Math.min(100, Math.round(rms * 380));
+      vuFill.style.width = meterPercent + "%";
+
+      ambientFloor = ambientFloor * 0.96 + rms * 0.04;
+      const speechThreshold = Math.max(0.038, ambientFloor * 2.2);
+      const silenceThreshold = Math.max(0.022, ambientFloor * 1.35);
+
+      const now = Date.now();
+
+      // 1. Interruption (Barge-in) detection while Robo is speaking
+      if (voiceState === "SPEAKING") {
+        if (rms > 0.16) {
+          interruptSpeech();
+          return requestAnimationFrame(checkAudio);
+        }
+      }
+
+      // 2. Far-field speech detection while LISTENING
+      if (voiceState === "LISTENING") {
+        if (rms > speechThreshold) {
+          if (!isSpeaking) {
+            isSpeaking = true;
+            speechStartTime = now;
+            lastSpeechTime = now;
+            recordedChunks = [];
+            if (mediaRecorder.state !== "recording") {
+              mediaRecorder.start(100);
+            }
+            label.textContent = "Listening to your question…";
+            vuText.textContent = "Voice detected · Recording speech…";
+          } else {
+            lastSpeechTime = now;
+          }
+        } else if (isSpeaking) {
+          if (rms > silenceThreshold) {
+            lastSpeechTime = now;
+          } else if (now - lastSpeechTime > silenceTimeoutMs) {
+            // Silence detected after speech -> process question
+            isSpeaking = false;
+            vuText.textContent = "Processing speech…";
+            if (mediaRecorder.state === "recording") {
+              mediaRecorder.stop();
+            }
+          } else if (now - speechStartTime > 16000) {
+            // Maximum phrase timeout (16s)
+            isSpeaking = false;
+            if (mediaRecorder.state === "recording") {
+              mediaRecorder.stop();
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(checkAudio);
+    }
+
+    requestAnimationFrame(checkAudio);
+  }
+
+  function startListening() {
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    isSpeaking = false;
+    recordedChunks = [];
+    setVoiceUI("LISTENING", "Listening… Speak your question now");
+    vuText.textContent = "Listening for speech (far-field active)…";
+  }
+
+  async function handleRecordingComplete() {
+    if (!recordedChunks.length) {
+      if (continuousToggle.checked && voiceState === "LISTENING") {
+        startListening();
+      } else {
+        setVoiceUI("IDLE", "Click to Start Conversation");
+      }
+      return;
+    }
+
+    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+    recordedChunks = [];
+
+    // Filter tiny clicks / ambient coughs
+    if (blob.size < 1200) {
+      if (continuousToggle.checked) {
+        startListening();
+      } else {
+        setVoiceUI("IDLE", "Click to Start Conversation");
+      }
+      return;
+    }
+
+    setVoiceUI("PROCESSING", "Robo is thinking with Gemini…");
+    vuText.textContent = "Whisper STT & Gemini processing…";
+
+    try {
+      const response = await fetch("/api/ask-voice", {
+        method: "POST",
+        headers: { "Content-Type": blob.type || "audio/webm" },
+        body: blob,
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        if (data.reason === "no_speech") {
+          vuText.textContent = "No clear speech detected";
+          if (continuousToggle.checked) {
+            setTimeout(startListening, 600);
+          } else {
+            setVoiceUI("IDLE", "Click to Start Conversation");
+          }
+          return;
+        }
+        throw new Error(data.message || data.error || "Could not process speech");
+      }
+
+      // Display recognized transcript & response
+      userText.textContent = data.transcript || "—";
+      botText.textContent = data.answer || "—";
+
+      // Append to live history
+      if (data.transcript && data.answer) {
+        state.history.unshift({
+          kind: "conversation",
+          text: data.transcript,
+          answer: data.answer,
+          title: data.title || "Voice Assistant",
+          source: "voice_web",
+          time: new Date().toISOString()
+        });
+        renderHistory();
+      }
+
+      if (data.is_stop) {
+        setVoiceUI("IDLE", "Robo session paused");
+        continuousToggle.checked = false;
+        playAudio(data.audio_url);
+        return;
+      }
+
+      // Play synthesized audio response
+      setVoiceUI("SPEAKING", "Robo is speaking response…");
+      vuText.textContent = "Neural Indian English speech playing";
+      await playAudio(data.audio_url);
+
+    } catch (err) {
+      toast("Voice error: " + err.message, true);
+      botText.textContent = "Error: " + err.message;
+      if (continuousToggle.checked) {
+        setTimeout(startListening, 1500);
+      } else {
+        setVoiceUI("IDLE", "Click to Start Conversation");
+      }
+    }
+  }
+
+  function playAudio(url) {
+    return new Promise((resolve) => {
+      if (!url) {
+        onAudioFinished();
+        return resolve();
+      }
+      player.src = url;
+      player.onended = () => {
+        onAudioFinished();
+        resolve();
+      };
+      player.onerror = () => {
+        onAudioFinished();
+        resolve();
+      };
+      player.play().catch(() => {
+        // Fallback to browser SpeechSynthesis if autoplay blocked
+        if (window.speechSynthesis && botText.textContent) {
+          const utter = new SpeechSynthesisUtterance(botText.textContent);
+          utter.onend = () => {
+            onAudioFinished();
+            resolve();
+          };
+          window.speechSynthesis.speak(utter);
+        } else {
+          onAudioFinished();
+          resolve();
+        }
+      });
+    });
+  }
+
+  function onAudioFinished() {
+    if (continuousToggle.checked) {
+      setTimeout(startListening, 600);
+    } else {
+      setVoiceUI("IDLE", "Click to Start Conversation");
+    }
+  }
+
+  function interruptSpeech() {
+    try {
+      player.pause();
+      player.currentTime = 0;
+    } catch {}
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    abortSpeech(); // calls /api/robot/abort-speech
+    toast("Speech interrupted by user.");
+    if (continuousToggle.checked) {
+      setTimeout(startListening, 300);
+    } else {
+      setVoiceUI("IDLE", "Speech stopped · Click to start");
+    }
+  }
+
+  // Event Listeners
+  micHero.addEventListener("click", async () => {
+    if (voiceState === "SPEAKING") {
+      interruptSpeech();
+      return;
+    }
+    if (voiceState === "LISTENING") {
+      setVoiceUI("IDLE", "Conversation paused");
+      return;
+    }
+    const ready = await setupAudio();
+    if (ready) startListening();
+  });
+
+  interruptBtn.addEventListener("click", interruptSpeech);
+
+})();

@@ -424,18 +424,31 @@ def _apply_pyttsx_voice(settings):
         pass
 
 
+def _apply_far_field_agc(raw_pcm: bytes, sample_width: int = 2) -> bytes:
+    """Automatic gain control and peak normalization for far-field microphone capture."""
+    try:
+        peak = audioop.max(raw_pcm, sample_width)
+        if 80 < peak < 16000:
+            gain = min(4.0, 24000.0 / peak)
+            return audioop.mul(raw_pcm, sample_width, gain)
+    except Exception:
+        pass
+    return raw_pcm
+
+
 def _resample_audio(audio_data: sr.AudioData) -> bytes:
     """
     Converts SpeechRecognition's mono PCM at its actual capture rate to a proper
-    16 kHz mono WAV for Whisper and Vosk.
+    16 kHz mono WAV for Whisper and Vosk, applying AGC for far-field speech.
     """
-    # Microphone captures mono PCM; use AudioData's recorded rate rather than
-    # assuming a particular device or hardware format.
     raw = audio_data.get_raw_data()
     source_rate = audio_data.sample_rate
     if source_rate != MIC_TARGET_RATE:
         raw, _ = audioop.ratecv(raw, audio_data.sample_width, 1,
                                 source_rate, MIC_TARGET_RATE, None)
+
+    # Far-field automatic gain boost
+    raw = _apply_far_field_agc(raw, audio_data.sample_width)
 
     # Wrap in a proper WAV container (1 ch, 16-bit, 16000 Hz).
     buf = io.BytesIO()
@@ -446,6 +459,123 @@ def _resample_audio(audio_data: sr.AudioData) -> bytes:
         wf.writeframes(raw)
     buf.seek(0)
     return buf.read()
+
+
+def _transcribe_openai_whisper(audio_bytes: bytes, filename: str = "audio.wav") -> str:
+    """Transcribes audio using OpenAI Whisper API if an API key is configured."""
+    api_key = (
+        os.environ.get("OPENAI_API_KEY") or
+        os.environ.get("WHISPER_API_KEY") or
+        ""
+    ).strip()
+    if not api_key:
+        return ""
+    try:
+        import certifi, ssl, uuid
+        from urllib.request import Request, urlopen
+
+        boundary = "----WebKitFormBoundary" + uuid.uuid4().hex
+        body = bytearray()
+        body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n".encode("utf-8"))
+        prompt = "Indian English, Siddaganga Institute of Technology, SIT, Tumakuru, Karnataka."
+        body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"prompt\"\r\n\r\n{prompt}\r\n".encode("utf-8"))
+        body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"language\"\r\n\r\nen\r\n".encode("utf-8"))
+        mime = "audio/webm" if filename.endswith((".webm", ".weba")) else "audio/wav"
+        body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: {mime}\r\n\r\n".encode("utf-8"))
+        body.extend(audio_bytes)
+        body.extend(b"\r\n")
+        body.extend(("--" + boundary + "--\r\n").encode("utf-8"))
+
+        api_url = os.environ.get("OPENAI_WHISPER_URL", "https://api.openai.com/v1/audio/transcriptions")
+        req = Request(api_url, data=bytes(body), method="POST", headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+        })
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        with urlopen(req, timeout=15, context=ssl_ctx) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("text", "").strip()
+    except Exception as exc:
+        print(f"[WARN] OpenAI Whisper API transcribe error: {exc}", file=sys.stderr)
+        return ""
+
+
+def transcribe_bytes(audio_bytes: bytes, filename: str = "audio.wav") -> str:
+    """
+    Transcribes audio bytes using OpenAI Whisper API -> Local Faster-Whisper -> Vosk.
+    Supports WAV, WebM, MP3, and OGG formats with far-field voice recognition.
+    """
+    if not audio_bytes or len(audio_bytes) < 300:
+        return ""
+
+    # 1. Try OpenAI Whisper API first if API key configured
+    openai_result = _transcribe_openai_whisper(audio_bytes, filename=filename)
+    if openai_result:
+        return openai_result
+
+    # 2. Local Faster-Whisper Transformer
+    if whisper_model is not None:
+        try:
+            wav_io = io.BytesIO(audio_bytes)
+            language = os.environ.get("HUMANOID_ASR_LANGUAGE", "en").strip().lower()
+            if language in ("", "auto", "none"):
+                language = None
+            segments, info = whisper_model.transcribe(
+                wav_io,
+                language=language,
+                beam_size=3,
+                vad_filter=True,
+                vad_parameters=dict(min_silence_duration_ms=400),
+                condition_on_previous_text=False,
+                temperature=0,
+                initial_prompt=(
+                    "Indian English, including regional Indian accents. Siddaganga Institute of Technology, SIT, Tumakuru, Karnataka. "
+                    "Campus guide words: principal, departments, placements, admissions, "
+                    "KCET, COMEDK, hostels, fees, library, labs, and college facilities. "
+                    "Wake phrase: Hey Robo."
+                ),
+            )
+            w_text = " ".join(s.text for s in segments).strip()
+            if w_text:
+                return w_text
+        except Exception as e:
+            print(f"[WARN] Faster-Whisper transcribe error: {e}", file=sys.stderr)
+
+    return ""
+
+
+def synthesize_to_bytes(text: str, voice_id: str = None) -> bytes:
+    """Synthesizes text to MP3 bytes using Edge-TTS for low-latency web playback."""
+    spoken_text = clean_text_for_speech(text)
+    if not spoken_text:
+        return b""
+    settings = _load_tts_settings()
+    if voice_id:
+        settings["voice_id"] = voice_id
+
+    try:
+        edge_tts = _edge_tts_module()
+        rate = round((settings["speed"] - 1.0) * 100)
+        pitch_hz = settings["pitch"] * 2
+
+        async def _synthesize():
+            communicate = edge_tts.Communicate(
+                spoken_text,
+                settings["voice_id"],
+                rate=f"{rate:+d}%",
+                volume=f"{settings['volume'] - 100:+d}%",
+                pitch=f"{pitch_hz:+d}Hz",
+            )
+            chunks = []
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    chunks.append(chunk["data"])
+            return b"".join(chunks)
+
+        return asyncio.run(_synthesize())
+    except Exception as exc:
+        print(f"[TTS WARN] In-memory neural synthesis failed: {exc}", file=sys.stderr)
+        return b""
 
 
 def transcribe_audio(audio_data: sr.AudioData) -> str:

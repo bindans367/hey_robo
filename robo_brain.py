@@ -14,7 +14,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, quote, unquote
 from urllib.request import Request, urlopen
 
 from matcher import matcher
@@ -203,6 +203,26 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"robot": robot_status()})
         if path == "/api/health":
             return self.send_json({"status": "healthy", "service": "robo_brain", "version": "2.0.0"})
+        if path == "/api/tts":
+            parsed = urlparse(self.path)
+            params = parse_qs(parsed.query)
+            text_to_speak = params.get("text", [""])[0].strip()
+            if not text_to_speak:
+                return self.send_json({"error": "Missing text parameter"}, 400)
+            try:
+                import voice_engine
+                audio_bytes = voice_engine.synthesize_to_bytes(text_to_speak)
+                if not audio_bytes:
+                    return self.send_json({"error": "TTS synthesis returned no audio"}, 500)
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Content-Length", str(len(audio_bytes)))
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                self.wfile.write(audio_bytes)
+                return
+            except Exception as exc:
+                return self.send_json({"error": f"TTS error: {exc}"}, 500)
         if path.startswith("/api/"):
             return self.send_json({"error": "Not found"}, 404)
         if path == "/eyes":
@@ -227,7 +247,54 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        content_type = self.headers.get("Content-Type", "").lower()
+        length = int(self.headers.get("Content-Length", "0"))
         try:
+            if path in ("/api/transcribe", "/api/ask-voice") and (content_type.startswith("audio/") or content_type.startswith("application/octet-stream")):
+                if length > 25_000_000:
+                    return self.send_json({"error": "Audio file too large"}, 400)
+                audio_bytes = self.rfile.read(length)
+                filename = "audio.webm" if "webm" in content_type else "audio.wav"
+                import voice_engine
+                transcript = voice_engine.transcribe_bytes(audio_bytes, filename=filename)
+                
+                if path == "/api/transcribe":
+                    return self.send_json({"ok": True, "text": transcript})
+                
+                # /api/ask-voice: end-to-end low-latency processing
+                if not transcript:
+                    return self.send_json({"ok": False, "reason": "no_speech", "message": "No clear speech detected. Please speak closer or louder."})
+                
+                core.publish_runtime("THINKING", transcript=transcript, detail="Processing speech with AI...")
+                settings = core.get_settings()
+                conv = settings.get("conversation", {})
+                norm_cmd = " ".join(re.sub(r"[^\w\s]", " ", transcript.lower()).split())
+                
+                # Check stop phrase
+                if any(norm_cmd == p or norm_cmd.startswith(p + " ") for p in conv.get("stop_phrases", [])):
+                    farewell = conv.get("farewell", "Goodbye!")
+                    core.publish_runtime("SPEAKING", transcript=transcript, answer=farewell, title="Robo Stopped", detail="Voice session stopped by user.")
+                    return self.send_json({
+                        "ok": True,
+                        "transcript": transcript,
+                        "is_stop": True,
+                        "answer": farewell,
+                        "title": "Goodbye",
+                        "audio_url": f"/api/tts?text={quote(farewell)}"
+                    })
+                
+                result = core.answer_query(transcript, matcher, source="voice_web")
+                ans_text = result.get("answer", "")
+                core.publish_runtime("SPEAKING", transcript=transcript, answer=ans_text, title=result.get("title", ""), detail="Robo is speaking response.")
+                return self.send_json({
+                    "ok": True,
+                    "transcript": transcript,
+                    "result": result,
+                    "answer": ans_text,
+                    "title": result.get("title", ""),
+                    "audio_url": f"/api/tts?text={quote(ans_text)}"
+                })
+
             data = self.body_json()
             if path == "/api/settings":
                 old = core.get_settings()

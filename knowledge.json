@@ -22,7 +22,7 @@
       "identity",
       "robot name"
     ],
-    "answer": "I’m your SIT campus guide. Ask me about courses, admissions, placements, hostels, clubs, or campus services. What can I help you find?"
+    "answer": "Hello! I'm Robo, your friendly humanoid campus guide at Siddaganga Institute of Technology. I can help you explore SIT, find campus facilities and answer your college-related questions. How can I help you today?"
   },
   {
     "id": "about_sit",

@@ -78,7 +78,9 @@ def get_settings():
             for key in ("voice", "online", "local_llm", "conversation", "microphone"):
                 if isinstance(saved.get(key), dict):
                     merged[key].update(saved[key])
-        if os.environ.get("ROBO_BRAIN_API_KEY"):
+        if os.environ.get("GEMINI_API_KEY"):
+            merged["online"]["api_key"] = os.environ["GEMINI_API_KEY"]
+        elif os.environ.get("ROBO_BRAIN_API_KEY"):
             merged["online"]["api_key"] = os.environ["ROBO_BRAIN_API_KEY"]
         if merged["mode"] not in ("offline", "local", "online"):
             merged["mode"] = "offline"
@@ -298,21 +300,42 @@ def answer_query(query, matcher, source="dashboard"):
                 "cheerful": "Sound upbeat and welcoming while staying clear and accurate.",
                 "playful": "Use a light, playful campus-guide voice, but keep factual answers respectful and never let humor obscure the facts.",
             }.get(settings["conversation"].get("mood", "friendly"), "Use a warm, friendly campus-guide voice.")
+            # High confidence local match bypasses cloud call to eliminate latency and save tokens
+            if mode == "online" and local_result.get("matched") and float(local_result.get("confidence", 0)) >= 92.0:
+                result = dict(local_result)
+                result["mode"] = "online"
+                result["title"] = "SIT Verified Knowledge"
+                add_history("conversation", query, result.get("answer", ""), source, result.get("title", ""))
+                return result
+
             base_url = llm["base_url"].rstrip("/")
             parsed_endpoint = urlparse(base_url)
             is_ollama = mode == "local" and local_endpoint and parsed_endpoint.port == 11434
+
+            # Include concise instructions for real-time natural conversational speech
+            concise_rules = (
+                "CONVERSATION INSTRUCTIONS FOR SPOKEN VOICE:\n"
+                "- Keep answers short and concise (1 to 3 sentences maximum, under 50 words).\n"
+                "- Answer the question directly in simple, clear, natural spoken language.\n"
+                "- Never use markdown formatting (no asterisks, no bullet points, no bold, no headers).\n"
+                "- Be polite, friendly and helpful as Robo, the SIT campus guide."
+            )
+            system_msg = settings["system_prompt"] + "\n\n" + concise_rules + "\n\n" + mood_instruction + "\n\nRelevant local SIT knowledge:\n" + context
+
+            # Multi-turn context: include up to 2 recent exchanges
+            recent_turns = [h for h in get_history(limit=6) if h.get("kind") == "conversation" and h.get("text") and h.get("answer")]
+            conversation_messages = [{"role": "system", "content": system_msg}]
+            for past in reversed(recent_turns[:2]):
+                conversation_messages.append({"role": "user", "content": past["text"]})
+                conversation_messages.append({"role": "assistant", "content": past["answer"]})
+            conversation_messages.append({"role": "user", "content": query})
+
             if is_ollama:
-                # Ollama's native API supports think=false for Qwen3, preventing
-                # reasoning traces from leaking into Robo's spoken response.
                 url = f"{parsed_endpoint.scheme}://{parsed_endpoint.netloc}/api/chat"
-                payload = {"model": llm["model"], "think": False, "stream": False, "messages": [
-                    {"role": "system", "content": settings["system_prompt"] + "\n\n" + mood_instruction + "\n\nRelevant local SIT knowledge (use when relevant; do not contradict it):\n" + context},
-                    {"role": "user", "content": query}], "options": {"temperature": 0.4}}
+                payload = {"model": llm["model"], "think": False, "stream": False, "messages": conversation_messages, "options": {"temperature": 0.3}}
             else:
                 url = base_url + "/chat/completions"
-                payload = {"model": llm["model"], "messages": [
-                    {"role": "system", "content": settings["system_prompt"] + "\n\n" + mood_instruction + "\n\nRelevant local SIT knowledge (use when relevant; do not contradict it):\n" + context},
-                    {"role": "user", "content": query}], "temperature": 0.4}
+                payload = {"model": llm["model"], "messages": conversation_messages, "temperature": 0.3, "max_tokens": 150}
             headers = {"Content-Type": "application/json"}
             if key:
                 headers["Authorization"] = "Bearer " + key
