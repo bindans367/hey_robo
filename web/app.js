@@ -28,65 +28,11 @@ function go(page) {
   if (page === "knowledge") renderKnowledge();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-// ── Gemini Quick Connect Banner ──────────────────────────────────────────────
-function updateBanner(settings) {
-  const banner = $("#gemini-banner");
-  if (!banner) return;
-  const isOnline = settings.mode === "online";
-  const hasKey   = !!(settings.online && settings.online.api_key_set);
-  if (isOnline && hasKey) {
-    banner.classList.add("connected");
-    banner.classList.remove("hidden");
-    const strong = banner.querySelector(".gemini-banner-left strong");
-    const small  = banner.querySelector(".gemini-banner-left small");
-    if (strong) strong.textContent = "\u2713 Gemini is connected";
-    if (small)  small.textContent  = "Robo is using Gemini AI for answers.";
-    setTimeout(() => banner.classList.add("hidden"), 4000);
-  } else {
-    banner.classList.remove("hidden", "connected");
-  }
-}
-(function initBanner() {
-  const banner     = $("#gemini-banner");
-  const keyInput   = $("#banner-key-input");
-  const connectBtn = $("#banner-connect-btn");
-  const dismissBtn = $("#banner-dismiss");
-  if (!banner || !keyInput) return;
-  keyInput.addEventListener("input", () => {
-    connectBtn.disabled = keyInput.value.trim().length < 10;
-  });
-  connectBtn.addEventListener("click", async () => {
-    const key = keyInput.value.trim();
-    if (!key) return;
-    setBusy(connectBtn, true, "Connecting\u2026");
-    try {
-      const existing = state.settings || {};
-      const payload = Object.assign({}, existing, {
-        mode: "online",
-        online: Object.assign({}, existing.online || {}, {
-          base_url: (existing.online || {}).base_url || "https://generativelanguage.googleapis.com/v1beta/openai",
-          model:    (existing.online || {}).model    || "gemini-2.0-flash-lite",
-          api_key:  key
-        })
-      });
-      const data = await api("/api/settings", { settings: payload });
-      applySettings(data.settings);
-      toast("\u2713 Gemini connected! Robo is now using cloud AI.");
-    } catch(err) {
-      toast("Connection failed: " + err.message, true);
-      setBusy(connectBtn, false);
-    }
-  });
-  if (dismissBtn) dismissBtn.addEventListener("click", () => banner.classList.add("hidden"));
-})();
-// ─────────────────────────────────────────────────────────────────────────────
-
 function applySettings(settings) {
   state.settings = settings;
   const modeLabel = settings.mode === "online" ? "Gemini / cloud AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
   $("#mode-badge").innerHTML = `<i></i> ${modeLabel}`;
   $("#mode-badge").classList.toggle("online", settings.mode === "online");
-  updateBanner(settings);
   const voice = settings.voice || {};
   const selectedVoiceId = voice.provider === "system" ? "system" : (voice.voice_id || "en-IN-NeerjaNeural");
   if (![...$("#tts-voice").options].some(option => option.value === selectedVoiceId)) {

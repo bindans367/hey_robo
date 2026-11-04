@@ -69,25 +69,3 @@
 .voice-mic-hero.sleep{background:linear-gradient(135deg,#232e44,#151c2c);box-shadow:0 8px 24px rgba(16,25,41,.4);border:1px solid #344360}
 .voice-mic-hero.sleep:hover{transform:scale(1.04);box-shadow:0 10px 28px rgba(16,25,41,.55);border-color:#5a6d94}
 .voice-mic-hero.sleep .voice-mic-icon{opacity:.75}
-
-/* ── Gemini Quick Connect Banner ── */
-.gemini-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(135deg,#1a1060 0%,#2d1b8e 60%,#1e3a8a 100%);border:1px solid #4f46e5;border-radius:16px;padding:18px 22px;margin-bottom:20px;flex-wrap:wrap;animation:bannerIn .35s ease}
-@keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.gemini-banner.hidden{display:none}
-.gemini-banner-left{display:flex;align-items:center;gap:14px}
-.gemini-banner-icon{font-size:22px;color:#a78bfa;flex-shrink:0}
-.gemini-banner-left strong{display:block;color:#fff;font-size:14px;font-weight:700;margin-bottom:2px}
-.gemini-banner-left small{color:#a5b4fc;font-size:12px}
-.gemini-banner-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.banner-key-field{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:13px;padding:9px 14px;width:280px;outline:none;transition:.2s;font-family:monospace}
-.banner-key-field::placeholder{color:rgba(255,255,255,.4)}
-.banner-key-field:focus{border-color:#818cf8;background:rgba(255,255,255,.13)}
-#banner-connect-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:700;padding:9px 20px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:.2s;font-size:13px}
-#banner-connect-btn:disabled{opacity:.45;cursor:not-allowed}
-#banner-connect-btn:not(:disabled):hover{background:linear-gradient(135deg,#4f46e5,#7c3aed);transform:translateY(-1px)}
-#banner-dismiss{color:rgba(255,255,255,.5);font-size:18px;line-height:1;padding:4px 8px;border-radius:8px}
-#banner-dismiss:hover{color:#fff;background:rgba(255,255,255,.1)}
-.gemini-banner.connected{background:linear-gradient(135deg,#064e3b,#065f46);border-color:#10b981}
-.gemini-banner.connected .gemini-banner-icon{color:#34d399}
-.gemini-banner.connected .gemini-banner-left small{color:#6ee7b7}
-@media(max-width:820px){.banner-key-field{width:100%}.gemini-banner{flex-direction:column;align-items:flex-start}}
