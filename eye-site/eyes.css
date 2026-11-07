@@ -1,0 +1,109 @@
+:root {
+  color-scheme: dark;
+  --eye-color: #16d9f5;
+  --eye-glow: #00cfff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #05080d;
+}
+
+body { user-select: none; }
+
+.face {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 100svh;
+  place-items: center;
+  background: radial-gradient(ellipse at center, #101b25 0%, #080d13 48%, #05080d 80%);
+}
+
+.eyes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(36px, 9vw, 112px);
+  width: min(72vw, 700px);
+}
+
+.eye {
+  position: relative;
+  display: grid;
+  width: clamp(92px, 20vw, 220px);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #b5fbff 0%, var(--eye-color) 28%, #00a9d1 70%, #08718f 100%);
+  box-shadow: 0 0 12px #00eaff, 0 0 34px #00cfffaa, 0 0 76px #00cfff55;
+  animation: eye-breathe 4.8s ease-in-out infinite;
+}
+
+.right-eye { animation-delay: -0.25s; }
+
+.iris {
+  position: absolute;
+  width: 21%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #062630;
+  box-shadow: 0 0 0 5px #c9fcff22, 0 0 12px #063e4c99;
+  transition: transform 350ms ease, opacity 350ms ease;
+}
+
+.lid {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #0a121a;
+  transform: translateY(-102%);
+  pointer-events: none;
+}
+
+.eye.blinking .lid { animation: blink 210ms ease-in-out; }
+
+body[data-state="sleeping"] .eye { transform: scaleY(.72); }
+body[data-state="sleeping"] .iris { opacity: .35; }
+body[data-state="listening"] .eye { box-shadow: 0 0 16px #00eaff, 0 0 48px #00cfffcc, 0 0 92px #00cfff66; }
+body[data-state="thinking"] .iris { animation: look-around 2.8s ease-in-out infinite; }
+body[data-state="speaking"] .eye { animation: speak 650ms ease-in-out infinite alternate; }
+body[data-state="speaking"] .right-eye { animation-delay: -320ms; }
+body[data-state="offline"] .eye { filter: brightness(.78); }
+
+@keyframes blink {
+  0%, 100% { transform: translateY(-102%); }
+  45%, 58% { transform: translateY(0); }
+}
+
+@keyframes eye-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+}
+
+@keyframes speak {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.045); filter: brightness(1.2); }
+}
+
+@keyframes look-around {
+  0%, 100% { transform: translateX(0); }
+  28% { transform: translate(-12px, -5px); }
+  58% { transform: translate(12px, 4px); }
+}
+
+@media (max-width: 520px) {
+  .eyes { width: 88vw; gap: 7vw; }
+  .eye { width: 38vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+}
