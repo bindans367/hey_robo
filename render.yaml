@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: hey-robo-brain
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python robo_brain.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: ROBO_PUBLIC
+        value: "true"
+      - key: ROBO_ADMIN_PASSWORD
+        sync: false

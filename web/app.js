@@ -1,4 +1,4 @@
-const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null, backendOnline: false };
+const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null, backendOnline: false, cloudMode: false };
 const $ = (selector) => document.querySelector(selector);
 const esc = (value = "") => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const pretty = value => String(value || "general").replace(/[_-]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -34,6 +34,32 @@ function toast(message, bad=false) {
 function setBusy(button, busy, label) {
   if (busy) { button.dataset.oldText = button.innerHTML; button.disabled = true; button.innerHTML = `<span class="spinner"></span> ${label || "Working…"}`; }
   else { button.disabled = false; if (button.dataset.oldText) button.innerHTML = button.dataset.oldText; }
+}
+function speakInBrowser(text) {
+  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return Promise.resolve(false);
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(String(text || "").trim());
+  const voice = state.settings?.voice || {};
+  utterance.lang = "en-IN";
+  utterance.rate = Math.max(.65, Math.min(1.4, Number(voice.speed) || 1));
+  utterance.pitch = Math.max(.5, Math.min(2, 1 + (Number(voice.pitch) || 0) / 10));
+  utterance.volume = Math.max(0, Math.min(1, Number.isFinite(Number(voice.volume)) ? Number(voice.volume) / 100 : 1));
+  const gender = String(voice.gender || "").toLowerCase();
+  const voices = window.speechSynthesis.getVoices();
+  utterance.voice = voices.find(item => /^en[-_]in$/i.test(item.lang) && (!gender || item.name.toLowerCase().includes(gender)))
+    || voices.find(item => /^en[-_]in$/i.test(item.lang)) || null;
+  return new Promise(resolve => {
+    utterance.onend = () => resolve(true);
+    utterance.onerror = () => resolve(false);
+    try { window.speechSynthesis.speak(utterance); } catch { resolve(false); }
+  });
+}
+async function speakText(text) {
+  const result = await api("/api/speak", {text});
+  if (result.speech_mode === "browser" && !await speakInBrowser(text)) {
+    throw new Error("This browser does not have speech output available.");
+  }
+  return result;
 }
 function go(page) {
   document.querySelectorAll(".page").forEach(x => x.classList.toggle("active", x.id === `page-${page}`));
@@ -164,12 +190,16 @@ function renderRobotStatus(robot={running:false}) {
   $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
   $("#runtime-detail").textContent=running?(activity.detail||`Microphone assistant is running${robot.pid?` · process ${robot.pid}`:""}.`):"Start the microphone assistant to let students talk with Robo.";
   $("#robot-start").classList.toggle("hidden",running);$("#robot-stop").classList.toggle("hidden",!running);
+  $("#robot-start").disabled=state.cloudMode;
+  if(state.cloudMode) $("#robot-start").title="Wake-word and microphone control run on your local robot computer.";
   $("#robot-run-mode").classList.toggle("hidden",running);
   $("#robot-status-badge").innerHTML=`<i></i> ${running?"ROBOT LISTENING":"CONTROL PANEL READY"}`;
   $("#robot-status-badge").classList.toggle("live",running);
   $("#live-phase").classList.toggle("speaking",phase==="SPEAKING");
   $("#live-phase").innerHTML=`<i></i><span>${esc(labels[phase]||phase)}</span>`;
-  $("#live-detail").textContent=activity.detail||(running?"Robo is starting up.":"Start listening to see the current activity here.");
+  $("#live-detail").textContent=state.cloudMode
+    ?"Cloud demo: text chat and browser speech work here. Wake word and robot microphone control run on the local robot computer."
+    :(activity.detail||(running?"Robo is starting up.":"Start listening to see the current activity here."));
   if(activity.transcript){
     $("#live-transcript").textContent=activity.transcript;
     $("#voice-user-text").textContent=activity.transcript;
@@ -196,7 +226,7 @@ async function refreshRobotStatus(){try{const s=await api("/api/status");renderR
 async function refreshHistory() { try { state.history = (await api("/api/history")).history; renderHistory(); } catch (_) {} }
 async function refreshAll() {
   try {
-    const data = await api("/api/bootstrap"); state.knowledge = data.knowledge || []; state.history = data.history || []; state.categories = data.categories || []; state.scripts=data.scripts||[]; renderSavedScripts();
+    const data = await api("/api/bootstrap"); state.knowledge = data.knowledge || []; state.history = data.history || []; state.categories = data.categories || []; state.scripts=data.scripts||[]; state.cloudMode=Boolean(data.cloud_mode); renderSavedScripts();
     const select = $("#category-filter"), previous = select.value;
     select.innerHTML = `<option value="">All categories</option>` + state.categories.map(x=>`<option value="${esc(x)}">${esc(pretty(x))}</option>`).join("");
     if (state.categories.includes(previous)) select.value = previous;
@@ -306,7 +336,7 @@ $("#entry-form").addEventListener("submit",async event=>{
   event.preventDefault();const old=state.knowledge.find(x=>x.id===$("#entry-original-id").value);const speakAfterSave=$("#speak-after-save").checked;
   const item={id:$("#entry-id").value.trim(),title:$("#entry-title").value.trim(),category:$("#entry-category").value.trim()||"general",keywords:$("#entry-keywords").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),answer:$("#entry-answer").value.trim(),...(old?.sources?{sources:old.sources}:{})};
   const button=$("#entry-form button[type=submit]");setBusy(button,true,"Saving…");
-  try{const data=await api("/api/knowledge/save",{item});state.knowledge=data.knowledge;state.categories=[...new Set(state.knowledge.map(x=>x.category||"general"))].sort();renderKnowledge();closeEditor();toast("Saved. Robo can use the updated answer now.");if(speakAfterSave){try{await api("/api/speak",{text:item.answer});toast("Saved, and Robo spoke the updated answer.");refreshHistory();}catch(speechError){toast(`Saved, but speech failed: ${speechError.message}`,true);}}}
+  try{const data=await api("/api/knowledge/save",{item});state.knowledge=data.knowledge;state.categories=[...new Set(state.knowledge.map(x=>x.category||"general"))].sort();renderKnowledge();closeEditor();toast("Saved. Robo can use the updated answer now.");if(speakAfterSave){try{await speakText(item.answer);toast("Saved, and Robo spoke the updated answer.");refreshHistory();}catch(speechError){toast(`Saved, but speech failed: ${speechError.message}`,true);}}}
   catch(e){toast(e.message,true);}finally{setBusy(button,false);}
 });
 $("#modal-close").addEventListener("click",closeEditor);$("#cancel-entry").addEventListener("click",closeEditor);
@@ -315,10 +345,10 @@ $("#speech-text").addEventListener("input",()=>$("#char-count").textContent=`${$
 $("#saved-scripts").addEventListener("change",()=>{const script=state.scripts.find(s=>s.id===$("#saved-scripts").value);state.activeScriptId=script?.id||"";if(script){$("#script-name").value=script.name;$("#speech-text").value=script.text;$("#char-count").textContent=`${script.text.length.toLocaleString()} / 12,000`;}renderSavedScripts();});
 $("#save-script").addEventListener("click",async e=>{const name=$("#script-name").value.trim(),text=$("#speech-text").value.trim();if(!name||!text){toast("Add a script name and text before saving.",true);return;}const btn=e.currentTarget;setBusy(btn,true,"Saving…");try{const data=await api("/api/scripts/save",{id:state.activeScriptId,name,text});state.scripts=data.scripts;state.activeScriptId=data.script.id;renderSavedScripts();toast("Script saved for next time.");}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
 $("#delete-script").addEventListener("click",async()=>{const id=$("#saved-scripts").value,script=state.scripts.find(s=>s.id===id);if(!script)return;if(!confirm(`Delete saved script “${script.name}”?`))return;try{const data=await api("/api/scripts/delete",{id});state.scripts=data.scripts;state.activeScriptId="";$("#script-name").value="";renderSavedScripts();toast("Saved script deleted.");}catch(error){toast(error.message,true);}});
-$("#speak-script").addEventListener("click",async e=>{const btn=e.currentTarget,text=$("#speech-text").value.trim();if(!text){toast("Paste or type the speech first.",true);return;}setBusy(btn,true,"Robo is speaking…");try{const result=await api("/api/speak",{text});toast(result.spoken===false?"Speech was stopped.":"Robo finished speaking.");refreshHistory();}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#speak-script").addEventListener("click",async e=>{const btn=e.currentTarget,text=$("#speech-text").value.trim();if(!text){toast("Paste or type the speech first.",true);return;}setBusy(btn,true,"Robo is speaking…");try{await speakText(text);toast("Robo finished speaking.");refreshHistory();}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#abort-speech").addEventListener("click",abortSpeech);$("#abort-script-speech").addEventListener("click",abortSpeech);
-$("#repeat-answer").addEventListener("click",async e=>{const text=$("#live-answer").textContent.trim();if(!text||text==="Robo’s latest response will appear here.")return;const btn=e.currentTarget;setBusy(btn,true,"Speaking…");try{const result=await api("/api/speak",{text});toast(result.spoken===false?"Speech was stopped.":"Robo repeated the answer.");refreshHistory();}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
-$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const data=await api("/api/ask",{query,speak:$("#ask-speak").checked});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#repeat-answer").addEventListener("click",async e=>{const text=$("#live-answer").textContent.trim();if(!text||text==="Robo’s latest response will appear here.")return;const btn=e.currentTarget;setBusy(btn,true,"Speaking…");try{await speakText(text);toast("Robo repeated the answer.");refreshHistory();}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
+$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const speak=$("#ask-speak").checked;const data=await api("/api/ask",{query,speak});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";if(speak&&data.speech_mode==="browser"&&!await speakInBrowser(r.answer))toast("Answer is ready, but this browser has no speech output.",true);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#tts-voice").addEventListener("change",updateRangeLabels);
 ["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
 document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
@@ -335,7 +365,7 @@ $("#online-key").addEventListener("input", () => {
   }
 });
 $("#save-settings").addEventListener("click",e=>saveSettings(e.currentTarget));$("#save-settings-bottom").addEventListener("click",e=>saveSettings(e.currentTarget));
-$("#test-voice").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Applying voice…");try{if(!await saveSettings($("#save-settings")))return;setBusy(btn,true,"Speaking…");const result=await api("/api/speak",{text:"Hello, I am Robo, your campus guide. How can I help you today?"});if(result.spoken===false)throw new Error("Speech playback failed. Check the selected voice and audio output.");const status=result.voice_status||{};if(status.fallback)toast(`Windows voice used because ${status.voice_id||"the neural voice"} failed: ${status.reason}`,true);else toast(`Voice sample played using ${status.used_voice||status.voice_id||"saved voice settings"}.`);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#test-voice").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Applying voice…");try{if(!await saveSettings($("#save-settings")))return;setBusy(btn,true,"Speaking…");const result=await speakText("Hello, I am Robo, your campus guide. How can I help you today?");const status=result.voice_status||{};if(result.speech_mode==="browser")toast("Voice sample played in this browser.");else if(status.fallback)toast(`Windows voice used because ${status.voice_id||"the neural voice"} failed: ${status.reason}`,true);else toast(`Voice sample played using ${status.used_voice||status.voice_id||"saved voice settings"}.`);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#test-online").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="online"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"online"});toast(result.message||"Cloud connection is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#test-local").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="local"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"local"});toast(result.message||"Local model is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#clear-history").addEventListener("click",async()=>{if(!confirm("Clear all saved conversation and speech history?"))return;try{await api("/api/history/clear",{});state.history=[];renderHistory();toast("History cleared.");}catch(e){toast(e.message,true);}});
@@ -522,6 +552,11 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       }, 400);
       return;
     }
+    if (state.cloudMode && state.settings.mode !== "online") {
+      setVoiceUI("IDLE", "Cloud demo microphone needs Cloud AI mode");
+      vuText.textContent = "Offline wake-word detection runs only on the local robot computer.";
+      return;
+    }
     if (state.settings.mode !== "online") {
       startLocalWakeWorker();
       return;
@@ -632,7 +667,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
   }
 
   async function startLocalWakeWorker() {
-    if (localWakeStartPromise || localWakeStarted || !ghostToggle.checked) return;
+    if (state.cloudMode || localWakeStartPromise || localWakeStarted || !ghostToggle.checked) return;
     localWakeStartPromise = (async () => {
       await stopBrowserWakeWord();
       setVoiceUI("SLEEP", "Starting local Hey Robo listener…");
@@ -1156,6 +1191,18 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
 
   window.addEventListener("robo-settings-applied", async (event) => {
     if (!ghostToggle.checked) return;
+    if (state.cloudMode) {
+      await stopLocalWakeWorker();
+      if (event.detail?.mode === "online") {
+        startBrowserWakeWord();
+      } else {
+        await stopBrowserWakeWord();
+        wakeLock = false;
+        setVoiceUI("IDLE", "Cloud demo: select Cloud AI for browser microphone input");
+        vuText.textContent = "Offline wake-word detection runs only on the local robot computer.";
+      }
+      return;
+    }
     if (event.detail?.mode === "online") {
       await stopLocalWakeWorker();
       if (voiceState === "SLEEP") startBrowserWakeWord();

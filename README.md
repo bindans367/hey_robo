@@ -157,3 +157,9 @@ The profile builder reads SIT's public department pages and records each page UR
      `shell:startup`
      Target: `C:\Users\Admin\Desktop\Humanoid\venv\Scripts\python.exe C:\Users\Admin\Desktop\Humanoid\bot.py`
 
+
+### Cloud demo on Render
+
+This repository includes a Render Blueprint (render.yaml) for a free, password-protected demo of the Robo Brain dashboard. When creating the Blueprint, set ROBO_ADMIN_PASSWORD to a strong password; the browser login username is robo. The service binds to Render's assigned port and serves the same dashboard and text-question API. Browser speech uses the visitor's own device. Wake-word detection, local microphone capture, Windows voices, and a local Ollama model remain on the robot computer and cannot run on Render.
+
+Render's free filesystem is temporary. Settings, history, edited answers, and saved scripts written by the demo can be lost when the service restarts or redeploys. Use the committed knowledge base for demo answers and do not treat the free service as the permanent source of truth. To synchronize the Vercel eye display with the demo, use the public, limited-status endpoint /api/eye-status as the eye page's status query parameter. This endpoint returns only the robot phase, without conversation text.

@@ -4,6 +4,8 @@ Run with: python robo_brain.py
 The service only listens on 127.0.0.1; open http://127.0.0.1:8765.
 """
 import json
+import base64
+import hmac
 import os
 import queue
 import re
@@ -166,17 +168,50 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print("[ROBO BRAIN] " + fmt % args)
 
-    def send_json(self, payload, status=200):
+    def send_json(self, payload, status=200, extra_headers=None):
         try:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            for name, value in (extra_headers or {}).items():
+                self.send_header(name, value)
             self.end_headers()
             self.wfile.write(body)
         except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
             pass
+
+    def require_admin(self, path):
+        """Protect the public control panel; local development stays unchanged."""
+        if os.environ.get("ROBO_PUBLIC", "").strip().lower() not in ("1", "true", "yes"):
+            return True
+        if path in ("/api/health", "/api/eye-status"):
+            return True
+        expected = os.environ.get("ROBO_ADMIN_PASSWORD", "")
+        header = self.headers.get("Authorization", "")
+        valid = False
+        if expected and header.startswith("Basic "):
+            try:
+                credentials = base64.b64decode(header[6:], validate=True).decode("utf-8")
+                username, separator, password = credentials.partition(":")
+                valid = bool(separator) and hmac.compare_digest(username, "robo") and hmac.compare_digest(password, expected)
+            except (ValueError, UnicodeDecodeError):
+                valid = False
+        if valid:
+            return True
+        body = b"Robo Brain requires its administrator password."
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="Robo Brain", charset="UTF-8"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
+        return False
 
     def body_json(self):
         length = int(self.headers.get("Content-Length", "0"))
@@ -196,16 +231,35 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if not self.require_admin(path):
+            return
         if path == "/api/bootstrap":
             items = read_knowledge()
             categories = sorted({str(x.get("category", "general")) for x in items})
             return self.send_json({"knowledge": items, "settings": safe_settings(),
                                    "history": core.get_history(100), "categories": categories,
-                                   "department_count": len(matcher.departments), "scripts": read_scripts()})
+                                   "department_count": len(matcher.departments), "scripts": read_scripts(),
+                                   "cloud_mode": os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes")})
         if path == "/api/history":
             return self.send_json({"history": core.get_history(1000)})
         if path == "/api/status":
             return self.send_json({"robot": robot_status()})
+        if path == "/api/eye-status":
+            runtime = core.get_runtime() or {}
+            phase = str(runtime.get("phase", "STOPPED")).upper()
+            safe_detail = {
+                "SLEEP": "Listening for Hey Robo",
+                "LISTENING": "Robo is listening",
+                "TRANSCRIPT": "Robo heard a question",
+                "THINKING": "Robo is thinking",
+                "SPEAKING": "Robo is speaking",
+                "READY": "Robo is ready",
+                "STOPPED": "Robo is resting",
+            }.get(phase, "Robo is resting")
+            return self.send_json({"robot": {"running": bool(robot_process and robot_process.poll() is None),
+                                               "activity": {"phase": phase, "detail": safe_detail,
+                                                            "updated_at": runtime.get("updated_at", "")}}},
+                                  extra_headers={"Access-Control-Allow-Origin": "*"})
         if path == "/api/wake-beep":
             import wave, io, numpy as np
             buf = io.BytesIO()
@@ -280,6 +334,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if not self.require_admin(path):
+            return
         content_type = self.headers.get("Content-Type", "").lower()
         length = int(self.headers.get("Content-Length", "0"))
         try:
@@ -307,6 +363,8 @@ class Handler(BaseHTTPRequestHandler):
                         gemini_error = str(exc)
                         print(f"[ERROR] Gemini STT failed; falling back to local Faster-Whisper: {gemini_error}", file=sys.stderr, flush=True)
                 if not use_gemini or gemini_error:
+                    if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
+                        return self.send_json({"error": "Cloud voice recognition needs Cloud AI mode and a valid Gemini API key. The local Whisper microphone engine runs only on your robot computer."}, 503)
                     print("[STT] Local transcription fallback selected.", flush=True)
                     import voice_engine
                     transcript = voice_engine.transcribe_bytes(audio_bytes, filename=filename)
@@ -339,7 +397,7 @@ class Handler(BaseHTTPRequestHandler):
                         "is_stop": True,
                         "answer": farewell,
                         "title": "Goodbye",
-                        "audio_url": f"/api/tts?text={quote(farewell)}"
+                        "audio_url": "" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") else f"/api/tts?text={quote(farewell)}"
                     })
                 
                 answer_started = time.perf_counter()
@@ -353,7 +411,7 @@ class Handler(BaseHTTPRequestHandler):
                     "result": result,
                     "answer": ans_text,
                     "title": result.get("title", ""),
-                    "audio_url": f"/api/tts?text={quote(ans_text)}",
+                    "audio_url": "" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") else f"/api/tts?text={quote(ans_text)}",
                     "fallback_notice": "Gemini transcription was unavailable; used local Faster-Whisper." if gemini_error else ""
                 })
 
@@ -407,18 +465,27 @@ class Handler(BaseHTTPRequestHandler):
                 spoken = None
                 if data.get("speak", True):
                     core.publish_runtime("SPEAKING", transcript=query, answer=result["answer"], title=result.get("title", ""), detail="Robo is speaking the dashboard answer.")
-                    try:
-                        spoken = speak_and_wait(result["answer"])
-                    finally:
-                        phase = "READY" if locals().get("spoken", True) else "INTERRUPTED"
-                        core.publish_runtime(phase, transcript=query, answer=result["answer"], title=result.get("title", ""), detail="Dashboard speech finished." if phase == "READY" else "Speech was interrupted by the operator.")
-                return self.send_json({"result": result, "spoken": spoken, "voice_status": dict(last_tts_status)})
+                    if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
+                        spoken = False
+                    else:
+                        try:
+                            spoken = speak_and_wait(result["answer"])
+                        finally:
+                            phase = "READY" if locals().get("spoken", True) else "INTERRUPTED"
+                            core.publish_runtime(phase, transcript=query, answer=result["answer"], title=result.get("title", ""), detail="Dashboard speech finished." if phase == "READY" else "Speech was interrupted by the operator.")
+                return self.send_json({"result": result, "spoken": spoken,
+                                       "speech_mode": "browser" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") and data.get("speak", True) else "server",
+                                       "voice_status": dict(last_tts_status)})
             if path == "/api/speak":
                 text = str(data.get("text", "")).strip()
                 if not text:
                     return self.send_json({"error": "Paste a script first."}, 400)
                 if len(text) > 12000:
                     return self.send_json({"error": "Speech scripts are limited to 12,000 characters."}, 400)
+                if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
+                    core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is speaking a saved script in the browser.")
+                    core.add_history("script", text, text, "script-to-speech", "Speech script")
+                    return self.send_json({"ok": True, "spoken": False, "speech_mode": "browser"})
                 core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is speaking a saved script.")
                 try:
                     spoken = speak_and_wait(text)
@@ -431,6 +498,8 @@ class Handler(BaseHTTPRequestHandler):
                 core.clear_history()
                 return self.send_json({"ok": True, "history": []})
             if path == "/api/robot/start":
+                if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
+                    return self.send_json({"error": "Robot microphone and speaker controls are available only on the local robot computer."}, 503)
                 req_mode = data.get("mode", "ghost")
                 mode = "ptt" if req_mode == "ptt" else "voice" if req_mode == "voice" else "ghost"
                 return self.send_json({"ok": True, "robot": start_robot(mode)})
@@ -515,9 +584,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": f"{type(exc).__name__}: {exc}"}, 500)
 
 def main():
-    server = ThreadingHTTPServer(("127.0.0.1", 8765), Handler)
-    print("Robo Brain is ready at http://127.0.0.1:8765")
-    print("This control panel is local to this computer. Press Ctrl+C to stop it.")
+    public = os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes")
+    if public and not os.environ.get("ROBO_ADMIN_PASSWORD"):
+        raise RuntimeError("ROBO_ADMIN_PASSWORD must be set before exposing Robo Brain publicly.")
+    host = "0.0.0.0" if public else "127.0.0.1"
+    port = int(os.environ.get("PORT", "8765"))
+    server = ThreadingHTTPServer((host, port), Handler)
+    print(f"Robo Brain is ready on {host}:{port}")
+    print("Public deployment: administrator authentication enabled; robot hardware remains local." if public else "This control panel is local to this computer. Press Ctrl+C to stop it.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
