@@ -1,0 +1,54 @@
+{
+  "mode": "offline",
+  "system_prompt": "",
+  "voice": {
+    "gender": "female",
+    "name": "",
+    "provider": "edge",
+    "voice_id": "en-IN-NeerjaNeural",
+    "style": "",
+    "speed": 1.0,
+    "pitch": 0,
+    "volume": 80
+  },
+  "local_llm": {
+    "base_url": "http://127.0.0.1:11434/v1",
+    "model": "qwen3:0.6b",
+    "api_key": "",
+    "api_key_set": false
+  },
+  "online": {
+    "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "model": "gemini-2.0-flash",
+    "tts_model": "",
+    "transcription_model": "",
+    "api_key": "YOUR_GEMINI_API_KEY",
+    "api_key_set": false
+  },
+  "conversation": {
+    "welcome": "",
+    "wake_phrases": [
+      "hey robo"
+    ],
+    "wake_reply": "",
+    "stop_phrases": [
+      "robo stop"
+    ],
+    "farewell": "",
+    "thank_reply": "",
+    "no_match_reply": "",
+    "pause_reply": "",
+    "listen_timeout": 8,
+    "phrase_time_limit": 15,
+    "silent_turns": 0,
+    "sleep_after_answer": true,
+    "mood": "friendly",
+    "humor_enabled": false,
+    "humor_frequency": 0
+  },
+  "microphone": {
+    "device_index": null,
+    "energy_threshold": 300,
+    "transcription_provider": "auto"
+  }
+}

@@ -14,3 +14,4 @@ __pycache__/
 data/*.lock
 data/robot_runtime.log
 data/*.tmp
+data/robo_settings.json
