@@ -24,6 +24,7 @@ import sys
 import os
 import re
 import atexit
+import time
 
 # Fix Windows console UTF-8 output
 if hasattr(sys.stdout, "reconfigure"):

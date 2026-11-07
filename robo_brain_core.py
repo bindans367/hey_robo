@@ -1,7 +1,9 @@
 """Shared settings, answer routing, and conversation history for Robo Brain."""
 import json
+import base64
 import os
 import re
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -21,9 +23,9 @@ _mic_turn_lock = threading.Lock()
 DEFAULT_SETTINGS = {
     "mode": "offline",
     "system_prompt": "You are Robo, a friendly, clear, respectful humanoid campus guide for Siddaganga Institute of Technology. Speak in simple natural language. For SIT facts, use the supplied knowledge context and never invent people, dates, numbers, or policies. If the answer is unknown, say so and suggest checking with the college.",
-    "voice": {"gender": "female", "name": "", "provider": "edge", "voice_id": "en-IN-NeerjaNeural", "speed": 1.0, "pitch": 0, "volume": 100},
+    "voice": {"gender": "female", "name": "", "provider": "gemini", "voice_id": "Kore", "style": "indian_clear", "speed": 0.95, "pitch": 0, "volume": 100},
     "local_llm": {"base_url": "http://127.0.0.1:11434/v1", "model": "qwen3:0.6b", "api_key": ""},
-    "online": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "model": "gemini-3.8-flash", "api_key": ""},
+    "online": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "model": "gemini-3.8-flash", "tts_model": "gemini-3.8-flash-tts", "transcription_model": "gemini-3.5-transcribe", "api_key": ""},
     "conversation": {
         "welcome": "Welcome to SIT. I’m Robo, your campus guide.",
         "wake_phrases": ["hey robo", "hey robot", "hello robo", "hello robot", "hit o boo", "hitable", "here it will go"],
@@ -36,8 +38,11 @@ DEFAULT_SETTINGS = {
         "listen_timeout": 10, "phrase_time_limit": 15, "silent_turns": 6, "sleep_after_answer": 2,
         "mood": "friendly", "humor_enabled": False, "humor_frequency": 5,
     },
-    "microphone": {"device_index": -1, "energy_threshold": 300},
+    "microphone": {"device_index": -1, "energy_threshold": 300, "transcription_provider": "auto"},
 }
+
+GEMINI_TTS_VOICES = {"Kore", "Puck", "Charon", "Aoede", "Fenrir", "Leda", "Orus", "Zephyr", "Callirrhoe", "Autonoe", "Enceladus", "Iapetus", "Umbriel", "Algieba", "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"}
+GEMINI_TTS_STYLES = {"indian_clear", "indian_warm", "campus_formal", "indian_cheerful"}
 
 def _read_json(path, fallback):
     try:
@@ -45,6 +50,75 @@ def _read_json(path, fallback):
             return json.load(f)
     except (OSError, json.JSONDecodeError):
         return fallback
+
+def describe_provider_error(exc, api_key=""):
+    """Return useful, bounded provider diagnostics without ever echoing the key."""
+    detail = ""
+    if isinstance(exc, HTTPError):
+        try:
+            payload = json.loads(exc.read().decode("utf-8", errors="replace"))
+            error = payload.get("error", payload) if isinstance(payload, dict) else {}
+            detail = str(error.get("message", "")) if isinstance(error, dict) else str(error)
+        except (OSError, ValueError, AttributeError):
+            detail = ""
+        detail = f"HTTP {exc.code}" + (f": {detail}" if detail else "")
+    else:
+        detail = str(exc)
+    if api_key:
+        detail = detail.replace(api_key, "[hidden API key]")
+    return re.sub(r"\s+", " ", detail).strip()[:280] or "The provider returned an unspecified error."
+
+def transcribe_with_gemini(audio_bytes, mime_type="audio/webm", vocabulary=()):
+    """Transcribe one microphone turn with Gemini's multilingual transcription model."""
+    settings = get_settings()
+    api_key = settings["online"].get("api_key", "").strip()
+    if not api_key:
+        raise RuntimeError("Gemini speech recognition needs the API key saved in Voice & AI settings.")
+    mime_type = str(mime_type or "audio/webm").split(";", 1)[0].strip().lower()
+    if mime_type not in {"audio/webm", "audio/wav", "audio/x-wav", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/flac", "audio/aac"}:
+        mime_type = "audio/webm"
+    terms = list(dict.fromkeys(str(term).strip() for term in vocabulary if str(term).strip()))[:100]
+    payload = {
+        "model": settings["online"].get("transcription_model", "gemini-3.5-transcribe"),
+        # Inline audio is transient, so microphone turns are not retained in
+        # Gemini Files storage. Keep vocabulary as a first-class ASR hint.
+        "input": [{"type": "audio", "data": base64.b64encode(audio_bytes).decode("ascii"), "mime_type": mime_type}],
+        "generation_config": {"transcription_config": {
+            "mode": {"type": "verbatim"},
+            **({"custom_vocabulary": terms} if terms else {}),
+        }},
+    }
+    request = Request(
+        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        data=json.dumps(payload).encode("utf-8"), method="POST",
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key, "Api-Revision": "2026-05-20"},
+    )
+    try:
+        print("[GEMINI] Request sent for speech transcription (audio input is used only for STT).", flush=True)
+        try:
+            import certifi
+            import ssl
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            ssl_context = None
+        with urlopen(request, timeout=25, context=ssl_context) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        raise RuntimeError(describe_provider_error(exc, api_key)) from exc
+    text = str(result.get("output_text", "")).strip()
+    if not text:
+        text = " ".join(str(item.get("text", "")) for item in result.get("outputs", [])
+                        if isinstance(item, dict) and item.get("type") == "text").strip()
+    if not text:
+        text = " ".join(
+            str(item.get("text", ""))
+            for step in result.get("steps", []) if isinstance(step, dict)
+            for item in step.get("content", [])
+            if isinstance(item, dict) and item.get("type") == "text"
+        ).strip()
+    if text.upper() == "NO_SPEECH":
+        return ""
+    return text[:3000]
 
 def atomic_json(path, value):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -85,12 +159,15 @@ def get_settings():
         if merged["mode"] not in ("offline", "local", "online"):
             merged["mode"] = "offline"
         voice = merged["voice"]
+        provider = voice.get("provider", "edge")
         voice_id = str(voice.get("voice_id", ""))
-        if voice.get("provider", "edge") != "system" and not re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id):
+        valid_voice = (provider == "gemini" and voice_id in GEMINI_TTS_VOICES) or (provider == "edge" and bool(re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id))) or provider == "system"
+        if not valid_voice:
             voice["provider"] = "edge"
             voice["voice_id"] = "en-IN-NeerjaNeural"
             voice["gender"] = "female"
             voice["name"] = "en-IN-NeerjaNeural"
+        voice["style"] = voice.get("style", "indian_clear") if voice.get("style") in GEMINI_TTS_STYLES else "indian_clear"
         return merged
 
 def save_settings(new_settings):
@@ -117,8 +194,16 @@ def save_settings(new_settings):
         "en-IN-RehaanNeural": "male",
     }
     voice_id = str(voice.get("voice_id", "en-IN-NeerjaNeural"))
-    voice["voice_id"] = voice_id if re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id) else "en-IN-NeerjaNeural"
-    voice["provider"] = "system" if voice.get("provider") == "system" else "edge"
+    requested_provider = voice.get("provider", "edge")
+    if requested_provider == "gemini" and voice_id in GEMINI_TTS_VOICES:
+        voice["provider"] = "gemini"
+    elif requested_provider == "system":
+        voice["provider"] = "system"
+    else:
+        voice["provider"] = "edge"
+        voice_id = voice_id if re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id) else "en-IN-NeerjaNeural"
+    voice["voice_id"] = voice_id
+    voice["style"] = voice.get("style", "indian_clear") if voice.get("style") in GEMINI_TTS_STYLES else "indian_clear"
     if voice["provider"] == "edge":
         voice["gender"] = known_voice_genders.get(voice["voice_id"], voice.get("gender", "female"))
         voice["name"] = voice["voice_id"]
@@ -129,6 +214,8 @@ def save_settings(new_settings):
         settings[section]["base_url"] = str(settings[section].get("base_url", "")).rstrip("/")
         settings[section]["model"] = str(settings[section].get("model", "")).strip()
         settings[section]["api_key"] = str(settings[section].get("api_key", "")).strip()
+    settings["online"]["tts_model"] = str(settings["online"].get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts"
+    settings["online"]["transcription_model"] = str(settings["online"].get("transcription_model", "gemini-3.5-transcribe")).strip() or "gemini-3.5-transcribe"
     conversation = settings["conversation"]
     for key in ("welcome", "wake_reply", "farewell", "thank_reply", "no_match_reply", "pause_reply"):
         conversation[key] = str(conversation.get(key, DEFAULT_SETTINGS["conversation"][key])).strip()[:2000] or DEFAULT_SETTINGS["conversation"][key]
@@ -147,6 +234,7 @@ def save_settings(new_settings):
     microphone = settings["microphone"]
     microphone["device_index"] = int(microphone.get("device_index", -1))
     microphone["energy_threshold"] = max(50, min(4000, int(microphone.get("energy_threshold", 300))))
+    microphone["transcription_provider"] = microphone.get("transcription_provider", "auto") if microphone.get("transcription_provider", "auto") in ("auto", "gemini", "whisper") else "auto"
     with _lock:
         # The dashboard deliberately avoids returning a previously saved key to the browser.
         atomic_json(SETTINGS_PATH, settings)
@@ -264,7 +352,60 @@ def _offline_answer(query, matcher):
     result["mode"] = "offline"
     return result
 
+
+def _needs_previous_turn(query):
+    """Only attach chat history when this text clearly refers to an earlier turn."""
+    text = " ".join(str(query).lower().split())
+    if not text:
+        return False
+    follow_up_starts = (
+        "what about ", "how about ", "tell me more", "and what about ",
+        "can you explain that", "why is that", "how does that", "what does that",
+    )
+    if any(text.startswith(prefix) for prefix in follow_up_starts):
+        return True
+    words = set(re.findall(r"[a-z']+", text))
+    references = {"it", "its", "that", "this", "those", "these", "they", "them", "there", "he", "she", "his", "her"}
+    return len(words) <= 9 and bool(words & references)
+
+
+def _split_answer_sentences(text):
+    """Split on sentence punctuation without treating names like ``Dr. S. V.`` as sentences."""
+    text = str(text or "").strip()
+    if not text:
+        return []
+    sentences = []
+    start = 0
+    abbreviations = {"dr", "prof", "mr", "mrs", "ms", "sr", "jr", "st", "vs"}
+    for index, char in enumerate(text):
+        if char not in ".!?":
+            continue
+        end = index + 1
+        while end < len(text) and text[end] in "\"'’”)]}":
+            end += 1
+        if end < len(text) and not text[end].isspace():
+            continue
+        if char == ".":
+            previous_word = re.search(r"([A-Za-z]+)$", text[:index])
+            token = previous_word.group(1).lower() if previous_word else ""
+            # Preserve common titles and standalone initials (including a chain
+            # such as Dr. S. V. Dinesh) while still splitting after full sentences.
+            if token in abbreviations or len(token) == 1:
+                continue
+        sentence = text[start:end].strip()
+        if sentence:
+            sentences.append(sentence)
+        start = end
+        while start < len(text) and text[start].isspace():
+            start += 1
+    tail = text[start:].strip()
+    if tail:
+        sentences.append(tail)
+    return sentences
+
+
 def answer_query(query, matcher, source="dashboard"):
+    answer_started = time.perf_counter()
     settings = get_settings()
     local_result = matcher.search(query)
     normalized_query = " ".join(str(query).lower().split())
@@ -306,6 +447,7 @@ def answer_query(query, matcher, source="dashboard"):
                 result["mode"] = "online"
                 result["title"] = "SIT Verified Knowledge"
                 add_history("conversation", query, result.get("answer", ""), source, result.get("title", ""))
+                print(f"[AI] Local SIT answer ready in {time.perf_counter() - answer_started:.2f}s (online mode, verified match).", flush=True)
                 return result
 
             base_url = llm["base_url"].rstrip("/")
@@ -326,8 +468,12 @@ def answer_query(query, matcher, source="dashboard"):
             if local_result.get("matched") and context:
                 system_msg += "\n\nSupplementary verified SIT campus context:\n" + context
 
-            # Multi-turn context: include up to 2 recent exchanges
-            recent_turns = [h for h in get_history(limit=6) if h.get("kind") == "conversation" and h.get("text") and h.get("answer")]
+            # Prior turns can make a fresh question drift toward the old answer.
+            # Include them only for short, explicit follow-up questions.
+            recent_turns = []
+            if _needs_previous_turn(query):
+                recent_turns = [h for h in get_history(limit=6) if h.get("kind") == "conversation" and h.get("text") and h.get("answer")]
+                print(f"[AI] Follow-up detected; including {min(2, len(recent_turns))} recent exchange(s).", flush=True)
             conversation_messages = [{"role": "system", "content": system_msg}]
             for past in reversed(recent_turns[:2]):
                 conversation_messages.append({"role": "user", "content": past["text"]})
@@ -353,11 +499,14 @@ def answer_query(query, matcher, source="dashboard"):
                     pass
                 with urlopen(request, timeout=60 if mode == "local" else 30, context=ssl_ctx) as response:
                     data = json.loads(response.read().decode("utf-8"))
+                if mode == "online":
+                    print("[GEMINI] Request sent with recognized text; no audio attached to the answer request.", flush=True)
                 answer = (data["message"]["content"] if is_ollama else data["choices"][0]["message"]["content"]).strip()
                 result = {"matched": True, "confidence": 100.0, "topic_id": "local_llm" if mode == "local" else "online_llm", "title": "Local Qwen" if mode == "local" else "Cloud language model",
                           "answer": answer, "suggestions": [], "normalized_query": query, "mode": mode}
             except (HTTPError, URLError, TimeoutError, KeyError, IndexError, ValueError, OSError) as exc:
-                reason = str(exc)[:180]
+                reason = describe_provider_error(exc, key)
+                print(f"[ERROR] {mode_name} answer request failed: {reason}", file=sys.stderr, flush=True)
                 result = {"matched": False, "confidence": 0.0, "topic_id": "llm_unavailable", "title": mode_name,
                           "answer": f"I can't reach the selected {mode_name} right now. Please check that it is running and configured, then try again. {reason}",
                           "suggestions": [], "normalized_query": query, "mode": mode, "notice": f"Selected {mode_name} could not be reached."}
@@ -372,6 +521,12 @@ def answer_query(query, matcher, source="dashboard"):
         turns = sum(1 for row in get_history(1000) if row.get("kind") == "conversation")
         if (turns + 1) % conversation["humor_frequency"] == 0:
             result["answer"] += "\n\nAnd a tiny campus joke: Why did the student bring a ladder to class? They heard the grades were going up!"
+    # Keep actual spoken and displayed answers short in every provider mode;
+    # the online prompt alone cannot enforce this for curated offline answers.
+    sentences = _split_answer_sentences(result.get("answer", ""))
+    if len(sentences) > 2:
+        result["answer"] = " ".join(sentences[:2])
     add_history("conversation", query, result.get("answer", ""), source, result.get("title", ""))
+    print(f"[AI] Answer ready in {time.perf_counter() - answer_started:.2f}s ({result.get('mode', settings['mode'])}).", flush=True)
     return result
 

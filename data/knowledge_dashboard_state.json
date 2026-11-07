@@ -1,0 +1,31 @@
+{
+  "overrides": [
+    {
+      "id": "identity",
+      "title": "Robot Identity",
+      "category": "general",
+      "keywords": [
+        "who are you",
+        "what is your name",
+        "your name",
+        "tell me about yourself",
+        "what are you",
+        "who made you",
+        "are you a robot",
+        "humanoid",
+        "assistant",
+        "robot",
+        "sit bot",
+        "campus bot",
+        "sit robot",
+        "who r u",
+        "introduce yourself",
+        "identity",
+        "robot name"
+      ],
+      "answer": "Hello! I'm Robo, your  humanoid campus guide at Siddaganga Institute of Technology. I can help you explore SIT. How can I help you today?",
+      "updated_at": "2026-11-04T06:43:53+00:00"
+    }
+  ],
+  "deleted": []
+}

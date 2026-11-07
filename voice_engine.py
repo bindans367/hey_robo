@@ -5,8 +5,7 @@ for SIT Humanoid Campus Assistant.
 Combines:
 - Audio capture from the current Windows default input device, using its native rate
   and SpeechRecognition's mono capture, with resampling to 16 kHz before Whisper
-- Advanced offline multilingual Faster-Whisper (large-v3-turbo, CPU int8) for improved
-  accent tolerance, Indian-English recognition, and automatic language detection
+- Advanced offline Faster-Whisper tiny.en (CPU int8) for efficient English recognition
 - Chunked Vosk KaldiRecognizer fallback
 - Synchronous Windows SAPI Text-to-Speech with pyttsx3 fallback and acronym expansion
 
@@ -17,16 +16,21 @@ Mic notes:
 
 import audioop
 import asyncio
+import base64
 import io
 import json
 import os
 import re
 import sys
 import tempfile
+import threading
 import time
 import wave
 import xml.sax.saxutils as xml_utils
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 import pyttsx3
+import numpy as np
 import speech_recognition as sr
 from vosk import KaldiRecognizer, Model, SetLogLevel
 from faster_whisper import WhisperModel
@@ -64,54 +68,65 @@ def _sapi_speak_interruptibly(text, xml=False):
 
 SetLogLevel(-1)
 
-# ---------------------------------------------------------------------------
-# 1. Initialize Whisper (Primary multilingual Transformer STT - 100% Offline)
-# ---------------------------------------------------------------------------
-TTS_ONLY = os.environ.get("HUMANOID_TTS_ONLY") == "1"
-if TTS_ONLY:
-    whisper_model = None
-else:
-    print("Loading offline AI speech recognition (Whisper)...", flush=True)
-    configured_model = os.environ.get("HUMANOID_WHISPER_MODEL", "").strip()
-    model_candidates = []
-    if configured_model:
-        model_candidates.append(configured_model)
-    # Prefer pre-cached offline models on machine, then fall back cleanly
-    for candidate in ("base", "base.en", "tiny.en", "large-v3-turbo"):
-        if candidate not in model_candidates:
-            model_candidates.append(candidate)
-
-    whisper_model = None
-    for whisper_name in model_candidates:
-        try:
-            print(f"Loading Whisper model '{whisper_name}'...", flush=True)
-            whisper_model = WhisperModel(whisper_name, device="cpu", compute_type="int8",
-                                         cpu_threads=max(2, min(8, os.cpu_count() or 4)), num_workers=1,
-                                         local_files_only=True)
-            print(f"Whisper model '{whisper_name}' loaded successfully (offline).", flush=True)
-            break
-        except Exception:
-            if configured_model == whisper_name:
-                try:
-                    whisper_model = WhisperModel(whisper_name, device="cpu", compute_type="int8",
-                                                 cpu_threads=max(2, min(8, os.cpu_count() or 4)), num_workers=1)
-                    break
-                except Exception as e:
-                    print(f"[WARN] Could not load configured Whisper model {whisper_name}: {e}", file=sys.stderr)
-            continue
-
-    if whisper_model is None:
-        print("[WARN] Could not load any local Whisper model. Falling back to Vosk.", file=sys.stderr)
-
-# ---------------------------------------------------------------------------
-# 2. Initialize Vosk (Secondary Kaldi STT)
-# ---------------------------------------------------------------------------
+# Load models on the first actual STT use, not on import. This lets dashboard
+# TTS safely import this module without caching an STT-disabled instance.
+whisper_model = None
+whisper_model_name = None
 vosk_model = None
-if not TTS_ONLY and os.path.isdir(VOSK_MODEL_PATH):
-    try:
-        vosk_model = Model(VOSK_MODEL_PATH)
-    except Exception as e:
-        print(f"[WARN] Could not load Vosk: {e}", file=sys.stderr)
+_stt_models_loaded = False
+_stt_model_lock = threading.Lock()
+_stt_inference_lock = threading.Lock()
+
+
+def _ensure_stt_models_loaded():
+    """Load one cached CPU Whisper model and Vosk once, safely across threads."""
+    global whisper_model, whisper_model_name, vosk_model, _stt_models_loaded
+    if _stt_models_loaded:
+        return
+    with _stt_model_lock:
+        if _stt_models_loaded:
+            return
+        print("[STT] Loading offline speech models once (CPU int8)...", flush=True)
+        configured_model = os.environ.get("HUMANOID_WHISPER_MODEL", "").strip()
+        candidates = [configured_model] if configured_model else []
+        # English is the robot's default. tiny.en is cached and offers the
+        # best startup/latency fit for this CPU; base.en is tried if available.
+        for candidate in ("tiny.en", "base.en", "base", "large-v3-turbo"):
+            if candidate not in candidates:
+                candidates.append(candidate)
+        for name in candidates:
+            try:
+                print(f"[STT] Loading Faster-Whisper '{name}'...", flush=True)
+                whisper_model = WhisperModel(
+                    name, device="cpu", compute_type="int8",
+                    cpu_threads=max(2, min(4, os.cpu_count() or 4)), num_workers=1,
+                    local_files_only=True,
+                )
+                whisper_model_name = name
+                print(f"[STT] Faster-Whisper '{name}' ready.", flush=True)
+                break
+            except Exception as exc:
+                print(f"[STT] Cached model '{name}' unavailable: {type(exc).__name__}.", flush=True)
+                if configured_model == name:
+                    try:
+                        whisper_model = WhisperModel(
+                            name, device="cpu", compute_type="int8",
+                            cpu_threads=max(2, min(4, os.cpu_count() or 4)), num_workers=1,
+                        )
+                        whisper_model_name = name
+                        print(f"[STT] Configured model '{name}' downloaded and ready.", flush=True)
+                        break
+                    except Exception as download_exc:
+                        print(f"[ERROR] Configured Whisper model failed: {download_exc}", file=sys.stderr, flush=True)
+        if os.path.isdir(VOSK_MODEL_PATH):
+            try:
+                vosk_model = Model(VOSK_MODEL_PATH)
+                print("[STT] Vosk fallback ready.", flush=True)
+            except Exception as exc:
+                print(f"[ERROR] Vosk model failed to load: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+        if whisper_model is None:
+            print("[ERROR] No local Faster-Whisper model loaded; Vosk is the only fallback.", file=sys.stderr, flush=True)
+        _stt_models_loaded = True
 
 # ---------------------------------------------------------------------------
 # 3. SpeechRecognizer – fixed threshold, NO dynamic calibration
@@ -121,7 +136,7 @@ recognizer.dynamic_energy_threshold = True    # Follow changing motor / room noi
 recognizer.energy_threshold         = ENERGY_THRESHOLD
 recognizer.dynamic_energy_adjustment_damping = 0.08
 recognizer.dynamic_energy_ratio = 1.5
-recognizer.pause_threshold          = 1.15
+recognizer.pause_threshold          = 1.45
 recognizer.phrase_threshold         = 0.15
 recognizer.non_speaking_duration    = 0.45
 
@@ -159,12 +174,13 @@ except Exception as e:
     print(f"[WARN] Windows SAPI unavailable; will use pyttsx3: {e}", file=sys.stderr)
 
 _calibrated = False
+_calibrated_device = object()
 
 
 def calibrate_microphone():
     """Measure room noise once so the recognizer can set a suitable speech threshold."""
-    global _calibrated
-    if _calibrated or TTS_ONLY:
+    global _calibrated, _calibrated_device
+    if _calibrated and _calibrated_device == MIC_DEVICE_INDEX:
         return
     try:
         device_label = "Windows default" if MIC_DEVICE_INDEX is None else str(MIC_DEVICE_INDEX)
@@ -175,9 +191,12 @@ def calibrate_microphone():
         # Keep adapting: motor noise can change after startup calibration.
         recognizer.dynamic_energy_threshold = True
         _calibrated = True
+        _calibrated_device = MIC_DEVICE_INDEX
         print(f"Microphone calibrated; speech threshold={recognizer.energy_threshold:.0f}.", flush=True)
     except Exception as exc:
         recognizer.dynamic_energy_threshold = True
+        _calibrated = True
+        _calibrated_device = MIC_DEVICE_INDEX
         print(f"[WARN] Microphone calibration skipped: {exc}", file=sys.stderr)
 
 
@@ -225,17 +244,26 @@ def _load_tts_settings():
         with open(path, "r", encoding="utf-8") as f:
             settings = json.load(f)
         voice = settings.get("voice", {})
-        voice_id = str(voice.get("voice_id", "en-IN-NeerjaNeural"))
-        if not re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id):
+        provider = voice.get("provider", "edge")
+        voice_id = str(voice.get("voice_id", "Kore" if provider == "gemini" else "en-IN-NeerjaNeural"))
+        if provider == "gemini":
+            allowed = {"Kore", "Puck", "Charon", "Aoede", "Fenrir", "Leda", "Orus", "Zephyr", "Callirrhoe", "Autonoe", "Enceladus", "Iapetus", "Umbriel", "Algieba", "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"}
+            if voice_id not in allowed:
+                voice_id = "Kore"
+        elif not re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id):
             voice_id = "en-IN-NeerjaNeural"
+        online = settings.get("online", {})
         return {
             "gender": voice.get("gender", "female"),
             "name": str(voice.get("name", "")).strip().lower(),
-            "provider": voice.get("provider", "edge"),
+            "provider": provider if provider in ("edge", "system", "gemini") else "edge",
             "voice_id": voice_id,
+            "style": voice.get("style", "indian_clear"),
             "speed": max(.65, min(1.4, float(voice.get("speed", 1.0)))),
             "pitch": max(-10, min(10, int(voice.get("pitch", 0)))),
             "volume": max(0, min(100, int(voice.get("volume", 100)))),
+            "api_key": str(online.get("api_key", "")).strip(),
+            "tts_model": str(online.get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts",
         }
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         return {"gender": "female", "name": "", "provider": "edge", "voice_id": "en-IN-NeerjaNeural", "speed": 1.0, "pitch": 0, "volume": 100}
@@ -304,6 +332,106 @@ def _edge_speak_interruptibly(text, settings):
             pass
 
 
+def _gemini_synthesize(text, settings):
+    """Generate natural Indian English speech with the saved Gemini API key."""
+    api_key = settings.get("api_key", "")
+    if not api_key:
+        raise RuntimeError("Gemini TTS needs the API key saved in Voice & AI settings.")
+    styles = {
+        "indian_clear": "Speak in clear, natural Indian English as an educated and welcoming campus guide in Karnataka. Keep the Indian cadence authentic and subtle, never exaggerated. Use a gentle, measured pace and articulate names clearly.",
+        "indian_warm": "Speak in warm, natural Indian English with a friendly, respectful campus-guide manner. Keep the local cadence authentic and subtle, never exaggerated. Sound conversational and unhurried.",
+        "campus_formal": "Speak in polished Indian English for a college announcement. Be composed, respectful, and clearly articulated, with a natural Indian cadence and an even pace.",
+        "indian_cheerful": "Speak in friendly, upbeat Indian English for welcoming students. Keep the local cadence authentic and subtle, never exaggerated; sound lively but not theatrical, with clear pronunciation.",
+    }
+    style = styles.get(settings.get("style"), styles["indian_clear"])
+    if settings.get("speed", 1.0) < .9:
+        style += " Slow down slightly and leave natural pauses between phrases."
+    elif settings.get("speed", 1.0) > 1.12:
+        style += " Keep a brisk but easy-to-follow pace."
+    if settings.get("pitch", 0) <= -3:
+        style += " Use a slightly lower vocal pitch."
+    elif settings.get("pitch", 0) >= 3:
+        style += " Use a slightly brighter, higher vocal placement."
+    payload = {
+        "model": settings.get("tts_model", "gemini-3.8-flash-tts"),
+        "input": [{"type": "user_input", "content": [{
+            "type": "text", "text": text,
+            "annotations": [{"type": "speech_metadata", "style": style}],
+        }]}],
+        "response_format": {"type": "audio"},
+        "generation_config": {"speech_config": [{"voice": settings.get("voice_id", "Kore")}]},
+    }
+    request = Request(
+        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        data=json.dumps(payload).encode("utf-8"), method="POST",
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key, "Api-Revision": "2026-05-20"},
+    )
+    try:
+        try:
+            import certifi, ssl
+            ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            ssl_ctx = None
+        with urlopen(request, timeout=45, context=ssl_ctx) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        try:
+            details = json.loads(exc.read().decode("utf-8", errors="replace"))
+            error = details.get("error", {})
+            message = str(error.get("message", "")) if isinstance(error, dict) else ""
+        except (ValueError, OSError):
+            message = ""
+        message = message.replace(api_key, "[hidden API key]")
+        raise RuntimeError(f"Gemini TTS returned HTTP {exc.code}" + (f": {message[:220]}" if message else ".")) from exc
+    except (URLError, TimeoutError, OSError, ValueError) as exc:
+        raise RuntimeError(f"Gemini TTS request failed: {str(exc)[:200]}") from exc
+    audio = result.get("output_audio", {}).get("data") if isinstance(result.get("output_audio"), dict) else None
+    if not audio:
+        # The Interactions REST response stores audio under
+        # steps[].content[] (the SDK's output_audio property is a convenience).
+        for step in result.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            for item in step.get("content", []):
+                if isinstance(item, dict) and item.get("type") == "audio":
+                    audio = item.get("data")
+                    if audio:
+                        break
+            if audio:
+                break
+    if not audio:
+        for item in result.get("outputs", []):
+            if isinstance(item, dict) and item.get("type") == "audio":
+                audio = item.get("data")
+                if audio:
+                    break
+    if not audio:
+        raise RuntimeError("Gemini returned no speech audio. Check that the selected TTS model is available for this API key.")
+    try:
+        return base64.b64decode(audio, validate=True)
+    except (ValueError, TypeError) as exc:
+        raise RuntimeError("Gemini returned audio in an unrecognized format.") from exc
+
+
+def _gemini_speak_interruptibly(text, settings):
+    import pygame
+    start_sequence = _speech_abort_sequence()
+    audio_bytes = _gemini_synthesize(text, settings)
+    if _speech_abort_sequence() != start_sequence:
+        return False
+    if not pygame.mixer.get_init():
+        pygame.mixer.init()
+    pygame.mixer.music.set_volume(settings["volume"] / 100)
+    pygame.mixer.music.load(io.BytesIO(audio_bytes))
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        if _speech_abort_sequence() != start_sequence:
+            pygame.mixer.music.stop()
+            return False
+        time.sleep(.05)
+    return True
+
+
 def _apply_sapi_settings(settings):
     if _sapi_voice is None:
         return
@@ -346,7 +474,7 @@ def get_tts_status():
 def _set_tts_status(settings, provider, fallback_reason=""):
     _last_tts_status.clear()
     _last_tts_status.update({"provider": provider, "voice_id": settings.get("voice_id", ""),
-                             "used_voice": settings.get("voice_id", "") if provider == "edge" else (settings.get("name") or "Windows system voice"),
+                             "used_voice": (f"Gemini {settings.get('voice_id', '')}" if provider == "gemini" else settings.get("voice_id", "")) if provider in ("edge", "gemini") else (settings.get("name") or "Windows system voice"),
                              "fallback": bool(fallback_reason), "reason": str(fallback_reason)[:240]})
 
 
@@ -363,19 +491,30 @@ def speak(text: str, log_callback=None):
     """Speak using the current saved voice settings and report fallback clearly."""
     global _tts_is_speaking, _last_tts_end_time
     _tts_is_speaking = True
-    spoken_text = clean_text_for_speech(text)
-    if log_callback:
-        log_callback(text)
-    else:
-        print(f"[ROBOT] {text}", flush=True)
-
-    settings = _load_tts_settings()
     fallback_reason = ""
     try:
+        spoken_text = clean_text_for_speech(text)
+        if log_callback:
+            log_callback(text)
+        else:
+            print(f"[ROBOT] {text}", flush=True)
+
+        settings = _load_tts_settings()
+        print(f"[TTS] Speech generation started ({settings['provider']} / {settings['voice_id']}).", flush=True)
+        if settings["provider"] == "gemini":
+            try:
+                result = _gemini_speak_interruptibly(spoken_text, settings)
+                _set_tts_status(settings, "gemini")
+                print("[TTS] Playback completed." if result else "[TTS] Playback interrupted.", flush=True)
+                return result
+            except Exception as gemini_error:
+                fallback_reason = str(gemini_error)
+                print(f"[TTS WARN] Gemini TTS unavailable; using the installed system voice: {gemini_error}", file=sys.stderr)
         if settings["provider"] == "edge":
             try:
                 result = _edge_speak_interruptibly(spoken_text, settings)
                 _set_tts_status(settings, "edge")
+                print("[TTS] Playback completed." if result else "[TTS] Playback interrupted.", flush=True)
                 return result
             except Exception as edge_error:
                 fallback_reason = str(edge_error)
@@ -391,6 +530,7 @@ def speak(text: str, log_callback=None):
             else:
                 result = _sapi_speak_interruptibly(spoken_text)
             _set_tts_status(settings, "system", fallback_reason)
+            print("[TTS] Playback completed." if result else "[TTS] Playback interrupted.", flush=True)
             return result
 
         global tts_engine
@@ -402,12 +542,13 @@ def speak(text: str, log_callback=None):
         tts_engine.say(spoken_text)
         tts_engine.runAndWait()
         _set_tts_status(settings, "system", fallback_reason)
-        _last_tts_end_time = time.time()
-        _tts_is_speaking = False
+        print("[TTS] Playback completed.", flush=True)
         return True
     except Exception as e:
         print(f"[TTS ERROR] Speech output failed: {type(e).__name__}: {e}", file=sys.stderr)
         try:
+            settings = locals().get("settings") or _load_tts_settings()
+            spoken_text = locals().get("spoken_text") or clean_text_for_speech(text)
             if tts_engine is None:
                 tts_engine = pyttsx3.init()
             tts_engine.setProperty("rate", int(152 * settings["speed"]))
@@ -421,9 +562,11 @@ def speak(text: str, log_callback=None):
             _set_tts_status(settings, "unavailable", fallback_reason or str(fallback_error))
             print(f"[TTS ERROR] Fallback speech output failed: {fallback_error}", file=sys.stderr)
             return False
-        finally:
-            _last_tts_end_time = time.time()
-            _tts_is_speaking = False
+    finally:
+        # All providers, including Gemini, Edge, and SAPI, return through here.
+        # Without this reset the local wake detector suppresses itself forever.
+        _last_tts_end_time = time.time()
+        _tts_is_speaking = False
 
 
 def _apply_pyttsx_voice(settings):
@@ -457,14 +600,16 @@ def _resample_audio(audio_data: sr.AudioData) -> bytes:
     Converts SpeechRecognition's mono PCM at its actual capture rate to a proper
     16 kHz mono WAV for Whisper and Vosk, applying AGC for far-field speech.
     """
-    raw = audio_data.get_raw_data()
+    # Faster-Whisper and Vosk get a canonical mono signed 16-bit WAV regardless
+    # of the capture device's native sample width.
+    raw = audio_data.get_raw_data(convert_width=2)
     source_rate = audio_data.sample_rate
     if source_rate != MIC_TARGET_RATE:
-        raw, _ = audioop.ratecv(raw, audio_data.sample_width, 1,
+        raw, _ = audioop.ratecv(raw, 2, 1,
                                 source_rate, MIC_TARGET_RATE, None)
 
     # Far-field automatic gain boost
-    raw = _apply_far_field_agc(raw, audio_data.sample_width)
+    raw = _apply_far_field_agc(raw, 2)
 
     # Wrap in a proper WAV container (1 ch, 16-bit, 16000 Hz).
     buf = io.BytesIO()
@@ -522,40 +667,61 @@ def transcribe_bytes(audio_bytes: bytes, filename: str = "audio.wav") -> str:
     Supports WAV, WebM, MP3, and OGG formats with far-field voice recognition.
     """
     if not audio_bytes or len(audio_bytes) < 300:
+        print("[STT] Empty/invalid transcript: audio payload is too short.", flush=True)
         return ""
 
     # 1. Try OpenAI Whisper API first if API key configured
     openai_result = _transcribe_openai_whisper(audio_bytes, filename=filename)
     if openai_result:
+        print(f"[STT] Transcript: {openai_result}", flush=True)
         return openai_result
 
     # 2. Local Faster-Whisper Transformer
+    _ensure_stt_models_loaded()
     if whisper_model is not None:
         try:
             wav_io = io.BytesIO(audio_bytes)
             language = os.environ.get("HUMANOID_ASR_LANGUAGE", "en").strip().lower()
             if language in ("", "auto", "none"):
                 language = None
-            segments, info = whisper_model.transcribe(
-                wav_io,
-                language=language,
-                beam_size=5,
-                vad_filter=True,
-                vad_parameters=dict(min_silence_duration_ms=450),
-                condition_on_previous_text=False,
-                temperature=0.0,
-                initial_prompt=(
-                    "Conversational Indian English. Siddaganga Institute of Technology, SIT Tumakuru, Karnataka. "
-                    "Campus guide: engineering admissions, placements, departments, coding, science, technology, general questions. "
-                    "Wake word: Hey Robo."
-                ),
-            )
-            w_text = " ".join(s.text for s in segments).strip()
+            with _stt_inference_lock:
+                segments, info = whisper_model.transcribe(
+                    wav_io,
+                    language=language,
+                    beam_size=3,
+                    vad_filter=False,
+                    condition_on_previous_text=False,
+                    temperature=0.0,
+                    initial_prompt=(
+                        "Conversational Indian English. Siddaganga Institute of Technology, SIT Tumakuru, Karnataka. "
+                        "Campus guide: engineering admissions, placements, departments, coding, science, technology, general questions. "
+                        "Wake word: Hey Robo."
+                    ),
+                )
+                w_text = " ".join(s.text for s in segments).strip()
             if w_text:
+                print(f"[STT] Transcript: {w_text}", flush=True)
                 return w_text
         except Exception as e:
             print(f"[WARN] Faster-Whisper transcribe error: {e}", file=sys.stderr)
 
+    # Browser MediaRecorder normally sends WebM/Opus. Decode it through
+    # Faster-Whisper's bundled decoder before passing 16 kHz mono PCM to Vosk.
+    # This gives the browser path the same offline fallback as the mic path.
+    if vosk_model is not None:
+        try:
+            from faster_whisper.audio import decode_audio
+
+            samples = decode_audio(io.BytesIO(audio_bytes), sampling_rate=16000)
+            pcm16 = (np.clip(samples, -1.0, 1.0) * 32767).astype(np.int16).tobytes()
+            v_text = _transcribe_vosk_pcm(pcm16)
+            if v_text:
+                print(f"[STT] Vosk transcript: {v_text}", flush=True)
+                return v_text
+        except Exception as e:
+            print(f"[WARN] Vosk browser-audio fallback error: {e}", file=sys.stderr)
+
+    print("[STT] Empty/invalid transcript: Whisper and Vosk returned no speech.", flush=True)
     return ""
 
 
@@ -567,16 +733,29 @@ def synthesize_to_bytes(text: str, voice_id: str = None) -> bytes:
     settings = _load_tts_settings()
     if voice_id:
         settings["voice_id"] = voice_id
+    print(f"[TTS] Speech generation started ({settings['provider']} / {settings['voice_id']}).", flush=True)
+
+    gemini_unavailable = ""
+    if settings["provider"] == "gemini":
+        try:
+            return _gemini_synthesize(spoken_text, settings)
+        except Exception as exc:
+            # Keep the web robot audible when Gemini quota, network, or model
+            # availability temporarily blocks speech. Edge uses the selected
+            # Indian English voice without consuming Gemini TTS quota.
+            gemini_unavailable = str(exc)
+            print(f"[TTS WARN] Gemini web TTS unavailable; trying the Indian English neural fallback: {exc}", file=sys.stderr)
 
     try:
         edge_tts = _edge_tts_module()
         rate = round((settings["speed"] - 1.0) * 100)
         pitch_hz = settings["pitch"] * 2
+        edge_voice_id = settings["voice_id"] if settings["provider"] == "edge" else "en-IN-NeerjaNeural"
 
         async def _synthesize():
             communicate = edge_tts.Communicate(
                 spoken_text,
-                settings["voice_id"],
+                edge_voice_id,
                 rate=f"{rate:+d}%",
                 volume=f"{settings['volume'] - 100:+d}%",
                 pitch=f"{pitch_hz:+d}Hz",
@@ -587,45 +766,50 @@ def synthesize_to_bytes(text: str, voice_id: str = None) -> bytes:
                     chunks.append(chunk["data"])
             return b"".join(chunks)
 
-        return asyncio.run(_synthesize())
+        result = asyncio.run(_synthesize())
+        if not result:
+            print("[ERROR] Indian English neural TTS returned no audio.", file=sys.stderr, flush=True)
+        return result
     except Exception as exc:
-        print(f"[TTS WARN] In-memory neural synthesis failed: {exc}", file=sys.stderr)
+        reason = f"Gemini: {gemini_unavailable}; fallback: {exc}" if gemini_unavailable else str(exc)
+        print(f"[TTS WARN] In-memory neural synthesis failed: {reason}", file=sys.stderr)
         return b""
 
 
 def transcribe_audio(audio_data: sr.AudioData) -> str:
     """
     Transcribes recorded audio completely offline.
-    Uses multilingual Large-v3-Turbo as primary for accent and language coverage.
+    Uses cached Faster-Whisper tiny.en as primary for efficient English recognition.
     Falls back to chunked Vosk KaldiRecognizer if Whisper returns nothing.
     """
     wav_bytes = _resample_audio(audio_data)
+    _ensure_stt_models_loaded()
 
     # 1. Primary: Faster-Whisper
     if whisper_model is not None:
         try:
             wav_io = io.BytesIO(wav_bytes)
-            language = os.environ.get("HUMANOID_ASR_LANGUAGE", "auto").strip().lower()
+            language = os.environ.get("HUMANOID_ASR_LANGUAGE", "en").strip().lower()
             if language in ("", "auto", "none"):
                 language = None
-            segments, info = whisper_model.transcribe(
-                wav_io,
-                language=language,
-                beam_size=5,
-                # SpeechRecognition already segments this utterance; a second
-                # VAD pass can remove soft syllables under motor noise.
-                vad_filter=False,
-                condition_on_previous_text=False,
-                temperature=0,
-                initial_prompt=(
-                    "Indian English, including regional Indian accents. Siddaganga Institute of Technology, SIT, Tumakuru, Karnataka. "
-                    "Campus guide words: principal, departments, placements, admissions, "
-                    "KCET, COMEDK, hostels, fees, library, labs, and college facilities. "
-                    "Wake phrase: Hey Robo."
-                ),
-            )
-            w_text = " ".join(s.text for s in segments).strip()
+            with _stt_inference_lock:
+                segments, info = whisper_model.transcribe(
+                    wav_io,
+                    language=language,
+                    beam_size=3,
+                    vad_filter=False,
+                    condition_on_previous_text=False,
+                    temperature=0,
+                    initial_prompt=(
+                        "Indian English, including regional Indian accents. Siddaganga Institute of Technology, SIT, Tumakuru, Karnataka. "
+                        "Campus guide words: principal, departments, placements, admissions, "
+                        "KCET, COMEDK, hostels, fees, library, labs, and college facilities. "
+                        "Wake phrase: Hey Robo."
+                    ),
+                )
+                w_text = " ".join(s.text for s in segments).strip()
             if w_text:
+                print(f"[STT] Transcript: {w_text}", flush=True)
                 return w_text
         except Exception as e:
             print(f"[WARN] Whisper transcribe error: {e}", file=sys.stderr)
@@ -633,28 +817,34 @@ def transcribe_audio(audio_data: sr.AudioData) -> str:
     # 2. Secondary Fallback: Chunked Vosk
     if vosk_model is not None:
         try:
-            rec = KaldiRecognizer(vosk_model, 16000)
-            rec.SetWords(False)
             with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
                 raw = wf.readframes(wf.getnframes())
-
-            text_chunks = []
-            for i in range(0, len(raw), 4000):
-                if rec.AcceptWaveform(raw[i:i+4000]):
-                    t = json.loads(rec.Result()).get("text", "").strip()
-                    if t:
-                        text_chunks.append(t)
-            fin = json.loads(rec.FinalResult()).get("text", "").strip()
-            if fin:
-                text_chunks.append(fin)
-
-            v_text = " ".join(text_chunks).strip()
+            v_text = _transcribe_vosk_pcm(raw)
             if v_text:
+                print(f"[STT] Vosk transcript: {v_text}", flush=True)
                 return v_text
         except Exception as e:
             print(f"[WARN] Vosk transcribe error: {e}", file=sys.stderr)
 
     return ""
+
+
+def _transcribe_vosk_pcm(raw_pcm: bytes) -> str:
+    """Decode mono 16 kHz signed PCM with the already-loaded Vosk model."""
+    if not raw_pcm or vosk_model is None:
+        return ""
+    rec = KaldiRecognizer(vosk_model, 16000)
+    rec.SetWords(False)
+    text_chunks = []
+    for i in range(0, len(raw_pcm), 4000):
+        if rec.AcceptWaveform(raw_pcm[i:i + 4000]):
+            text = json.loads(rec.Result()).get("text", "").strip()
+            if text:
+                text_chunks.append(text)
+    final_text = json.loads(rec.FinalResult()).get("text", "").strip()
+    if final_text:
+        text_chunks.append(final_text)
+    return " ".join(text_chunks).strip()
 
 
 def play_wake_beep():
@@ -677,15 +867,10 @@ def listen_for_wake_word(timeout: float = None, sensitivity: float = 0.5) -> boo
     Suppresses self-echo while robot is speaking.
     """
     global vosk_model
+    _ensure_stt_models_loaded()
     if vosk_model is None:
-        if os.path.isdir(VOSK_MODEL_PATH):
-            try:
-                vosk_model = Model(VOSK_MODEL_PATH)
-            except Exception:
-                pass
-        if vosk_model is None:
-            time.sleep(1.0)
-            return False
+        time.sleep(1.0)
+        return False
 
     import pyaudio
     p = pyaudio.PyAudio()
@@ -695,16 +880,31 @@ def listen_for_wake_word(timeout: float = None, sensitivity: float = 0.5) -> boo
 
     stream = None
     try:
+        device_info = (p.get_device_info_by_index(MIC_DEVICE_INDEX)
+                       if MIC_DEVICE_INDEX is not None else p.get_default_input_device_info())
+        device_index = int(device_info["index"])
+        native_rate = int(device_info.get("defaultSampleRate", 16000))
+        try:
+            can_use_16k = p.is_format_supported(
+                16000, input_device=device_index, input_channels=1, input_format=pyaudio.paInt16)
+        except (ValueError, OSError):
+            can_use_16k = False
+        capture_rate = 16000 if can_use_16k else native_rate
+        if capture_rate <= 0:
+            raise RuntimeError(f"Invalid microphone sample rate: {capture_rate}")
         stream = p.open(
             format=pyaudio.paInt16,
             channels=1,
-            rate=16000,
+            rate=capture_rate,
             input=True,
+            input_device_index=device_index,
             frames_per_buffer=2048,
         )
+        print(f"[WAKE] Mic device {device_index} capturing mono at {capture_rate} Hz.", flush=True)
         stream.start_stream()
 
         start_time = time.time()
+        resample_state = None
         while True:
             if timeout and (time.time() - start_time > timeout):
                 return False
@@ -725,15 +925,21 @@ def listen_for_wake_word(timeout: float = None, sensitivity: float = 0.5) -> boo
 
             if not data:
                 continue
+            if capture_rate != 16000:
+                data, resample_state = audioop.ratecv(data, 2, 1, capture_rate, 16000, resample_state)
+                if not data:
+                    continue
 
             if rec.AcceptWaveform(data):
                 res = json.loads(rec.Result())
                 text = res.get("text", "").lower()
                 if "hey robo" in text or "hey robot" in text or "hello robo" in text:
+                    print(f"[WAKE] Wake word detected: {text}", flush=True)
                     return True
             else:
                 partial = json.loads(rec.PartialResult()).get("partial", "").lower()
                 if "hey robo" in partial or "hey robot" in partial:
+                    print(f"[WAKE] Wake word detected: {partial}", flush=True)
                     return True
 
     except Exception as exc:
@@ -762,13 +968,16 @@ def play_wake_sound():
         print("\a", end="", flush=True)
 
 
-def listen(timeout: int = 8, phrase_time_limit: int = 15) -> str:
+def listen(timeout: int = 8, phrase_time_limit: int = 15, offline_only: bool = False) -> str:
     """
     Captures audio from the current default input (or HUMANOID_MIC_DEVICE override)
     and decodes offline.
     """
     try:
+        if _calibrated_device != MIC_DEVICE_INDEX:
+            calibrate_microphone()
         device_label = "Windows default" if MIC_DEVICE_INDEX is None else str(MIC_DEVICE_INDEX)
+        print("[RECORD] Recording started; waiting for speech and end-of-utterance silence.", flush=True)
         with sr.Microphone(device_index=MIC_DEVICE_INDEX) as mic:
             print(f"  [MIC] Opening device [{device_label}] @ {mic.SAMPLE_RATE}Hz, mono, threshold={recognizer.energy_threshold}", flush=True)
             print("  [MIC] Listening... (speak now)", flush=True)
@@ -778,24 +987,66 @@ def listen(timeout: int = 8, phrase_time_limit: int = 15) -> str:
 
         raw = audio.get_raw_data()
         captured_rms = audioop.rms(raw, audio.sample_width)
-        print(f"  [MIC] Captured {len(raw)} bytes at {audio.sample_rate}Hz mono, RMS={captured_rms}", flush=True)
+        duration = len(raw) / max(1, audio.sample_rate * audio.sample_width)
+        print(f"[RECORD] Recording stopped: {duration:.2f}s, {len(raw)} bytes, {audio.sample_rate}Hz mono, RMS={captured_rms}.", flush=True)
 
-        if captured_rms < 10:
-            print("  [MIC] WARNING: RMS is near zero - audio may be silent/wrong device", flush=True)
+        if duration < 0.30 or len(raw) < 4800 or captured_rms < 8:
+            print("[STT] Empty/invalid transcript: captured audio is too short or too quiet.", flush=True)
+            return ""
 
-        print("  [MIC] Processing offline speech...", flush=True)
-        text = transcribe_audio(audio)
-        print(f"  [MIC] Transcript: '{text}'", flush=True)
+        print("[STT] Transcription started.", flush=True)
+        settings = None
+        try:
+            import robo_brain_core as core
+            settings = core.get_settings()
+            microphone = settings.get("microphone", {})
+            stt_provider = microphone.get("transcription_provider", "auto")
+            use_gemini = (not offline_only) and (
+                stt_provider == "gemini" or (stt_provider == "auto" and settings.get("mode") == "online"))
+            if use_gemini:
+                try:
+                    print("[GEMINI] Sending captured transcript audio for transcription.", flush=True)
+                    # Use a canonical PCM WAV; this keeps mic rate/channel details
+                    # out of the cloud request and works with the recognizer's 16 kHz input.
+                    text = core.transcribe_with_gemini(_resample_audio(audio), "audio/wav", (
+                        "Siddaganga Institute of Technology", "SIT", "Tumakuru", "Karnataka",
+                        "KCET", "COMEDK", "VTU", "CSE", "ISE", "AIML", "AIDS", "ECE", "EEE",
+                        "principal", "placements", "hostel", "admissions", "Halcyon", "Birla Auditorium",
+                    ))
+                except Exception as exc:
+                    print(f"[ERROR] Gemini STT failed; using local Faster-Whisper: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+                    text = transcribe_audio(audio)
+            else:
+                text = transcribe_audio(audio)
+        except Exception as exc:
+            print(f"[ERROR] STT routing failed; using local Faster-Whisper: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+            text = transcribe_audio(audio)
+        text = text.strip()
+        # Whisper can hallucinate greeting loops on silence, room noise, or the
+        # wake beep. Do not let those transcripts trigger greeting answers.
+        words = re.findall(r"[a-z0-9']+", text.casefold())
+        if len(words) >= 8:
+            counts = {word: words.count(word) for word in set(words)}
+            unique_ratio = len(counts) / len(words)
+            most_repeated = max(counts.values(), default=0)
+            if unique_ratio < 0.45 and most_repeated >= 5:
+                print("[STT] Empty/invalid transcript: repetitive recognition/noise.", flush=True)
+                return ""
+        if not text:
+            print("[STT] Empty/invalid transcript.", flush=True)
+        else:
+            print(f"[STT] Transcript: {text}", flush=True)
         return text.strip()
 
     except sr.WaitTimeoutError:
-        print("  [MIC] TIMEOUT - no speech detected above threshold", flush=True)
+        print("[RECORD] Recording stopped: timed out before speech was detected.", flush=True)
+        print("[STT] Empty/invalid transcript.", flush=True)
         return ""
     except sr.UnknownValueError:
-        print("  [MIC] UnknownValueError - audio unclear", flush=True)
+        print("[STT] Empty/invalid transcript: speech could not be understood.", flush=True)
         return ""
     except Exception as e:
-        print(f"[MIC ERROR] {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"[ERROR] Microphone/STT failure: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
         return ""
 
 

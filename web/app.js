@@ -1,15 +1,31 @@
-const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null };
+const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null, backendOnline: false };
 const $ = (selector) => document.querySelector(selector);
 const esc = (value = "") => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const pretty = value => String(value || "general").replace(/[_-]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 let toastTimer;
 
 async function api(path, body) {
-  const response = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  let response;
+  try {
+    response = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  } catch (_) {
+    setBackendConnection(false);
+    throw new Error("Robo Brain is not running. Start it with .\\venv\\Scripts\\python.exe robo_brain.py and retry.");
+  }
+  setBackendConnection(true);
   let payload;
   try { payload = await response.json(); } catch { payload = {}; }
   if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
   return payload;
+}
+function setBackendConnection(online) {
+  state.backendOnline = online;
+  const banner = $("#connection-banner");
+  if (!banner) return;
+  banner.classList.toggle("hidden", online);
+  $("#connection-message").textContent = online
+    ? "Robo Brain is connected."
+    : "Robo Brain is offline. Start the local Python server to use chat, settings, voice, and history.";
 }
 function toast(message, bad=false) {
   const el = $("#toast"); el.textContent = message; el.className = `toast show${bad ? " bad" : ""}`;
@@ -30,19 +46,21 @@ function go(page) {
 }
 function applySettings(settings) {
   state.settings = settings;
+  window.dispatchEvent(new CustomEvent("robo-settings-applied", {detail: settings}));
   const isOnline = settings.mode === "online";
   const modeLabel = isOnline ? "Online · Gemini AI" : settings.mode === "local" ? "Local Qwen AI" : "Offline SIT brain";
   $("#mode-badge").innerHTML = `<i></i> ${modeLabel}`;
   $("#mode-badge").classList.toggle("online", isOnline);
   $("#mode-badge").title = isOnline ? "Current: Online (Gemini AI) — Click to switch to Offline" : "Current: Offline — Click to switch to Online";
   const voice = settings.voice || {};
-  const selectedVoiceId = voice.provider === "system" ? "system" : (voice.voice_id || "en-IN-NeerjaNeural");
+  const selectedVoiceId = voice.provider === "system" ? "system" : `${voice.provider || "edge"}:${voice.voice_id || "en-IN-NeerjaNeural"}`;
   if (![...$("#tts-voice").options].some(option => option.value === selectedVoiceId)) {
     const option = new Option(`${selectedVoiceId} · ${voice.gender || "female"}`, selectedVoiceId);
     option.dataset.gender = voice.gender || "female";
     $("#tts-voice").add(option);
   }
   $("#tts-voice").value = selectedVoiceId;
+  $("#tts-style").value = voice.style || "indian_clear";
   $("#speed-range").value = voice.speed ?? 1;
   $("#pitch-range").value = voice.pitch ?? 0;
   $("#volume-range").value = voice.volume ?? 100;
@@ -72,6 +90,7 @@ function applySettings(settings) {
   $("#sleep-after-answer").value = flow.sleep_after_answer ?? 2;
   $("#mic-device").value = mic.device_index ?? -1;
   $("#mic-threshold").value = mic.energy_threshold ?? 300;
+  $("#transcription-provider").value = mic.transcription_provider || "auto";
   $("#robo-mood").value = flow.mood || "friendly";
   $("#humor-enabled").checked = Boolean(flow.humor_enabled);
   $("#humor-frequency").value = flow.humor_frequency ?? 5;
@@ -139,7 +158,7 @@ function abortSpeech() {
 }
 function renderRobotStatus(robot={running:false}) {
   const running=Boolean(robot.running);
-  const activity=robot.activity||{}, phase=activity.phase|| (running?"STARTING":"STOPPED");
+  const activity=robot.activity||{}, phase=running?(activity.phase||"STARTING"):"STOPPED";
   const labels={STARTING:"STARTING",SLEEP:"GHOST SLEEPING",GREETING:"GREETING",LISTENING:"LISTENING",TRANSCRIPT:"HEARD YOU",THINKING:"THINKING",SPEAKING:"SPEAKING",INTERRUPTING:"STOPPING SPEECH",INTERRUPTED:"SPEECH STOPPED",READY:"READY",STOPPED:"STOPPED"};
   $("#runtime-indicator").classList.toggle("running",running);
   $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
@@ -151,16 +170,30 @@ function renderRobotStatus(robot={running:false}) {
   $("#live-phase").classList.toggle("speaking",phase==="SPEAKING");
   $("#live-phase").innerHTML=`<i></i><span>${esc(labels[phase]||phase)}</span>`;
   $("#live-detail").textContent=activity.detail||(running?"Robo is starting up.":"Start listening to see the current activity here.");
-  $("#live-transcript").textContent=activity.transcript|| (phase==="LISTENING"?"Listening… the transcript appears after the utterance is recognized.":"The recognized words will appear here after each utterance.");
-  $("#live-answer").textContent=activity.answer||"Robo’s latest response will appear here.";
+  if(activity.transcript){
+    $("#live-transcript").textContent=activity.transcript;
+    $("#voice-user-text").textContent=activity.transcript;
+  }else if(phase==="LISTENING"){
+    $("#live-transcript").textContent="Listening… speak your question after the wake beep.";
+    $("#voice-user-text").textContent="Listening… speak your question after the wake beep.";
+  }
+  if(activity.answer){
+    $("#live-answer").textContent=activity.answer;
+    $("#voice-bot-text").textContent=activity.answer;
+  }else if(phase==="THINKING"||phase==="TRANSCRIPT"){
+    $("#voice-bot-text").textContent="I heard you. I’m finding the best answer…";
+  }else if(phase==="LISTENING"){
+    $("#voice-bot-text").textContent="Robo is listening for your question…";
+  }
   $("#live-title").textContent=activity.title||"";
   $("#live-updated").textContent=activity.updated_at?`Updated ${new Date(activity.updated_at).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"})}`:"Live state refreshes automatically.";
   $("#abort-speech").classList.toggle("hidden",phase!=="SPEAKING");
   $("#abort-script-speech").classList.toggle("hidden",phase!=="SPEAKING");
   $("#repeat-answer").classList.toggle("hidden",!activity.answer);
+  window.dispatchEvent(new CustomEvent("robo-runtime-update", {detail:{running,activity,phase}}));
 }
 async function refreshRobotStatus(){try{const s=await api("/api/status");renderRobotStatus(s.robot);}catch{}}
-async function refreshHistory() { try { state.history = (await api("/api/history")).history; renderHistory(); } catch (e) { toast(e.message,true); } }
+async function refreshHistory() { try { state.history = (await api("/api/history")).history; renderHistory(); } catch (_) {} }
 async function refreshAll() {
   try {
     const data = await api("/api/bootstrap"); state.knowledge = data.knowledge || []; state.history = data.history || []; state.categories = data.categories || []; state.scripts=data.scripts||[]; renderSavedScripts();
@@ -188,14 +221,71 @@ function openEditor(item=null) {
 }
 function closeEditor() { $("#entry-modal").classList.add("hidden"); }
 async function saveSettings(button) {
-  const existing = state.settings || {};
   const mode = document.querySelector("input[name=answer-mode]:checked")?.value || "offline";
   const lines = selector => $(selector).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const voiceId=$("#tts-voice").value, systemVoice=voiceId==="system", voiceOption=$("#tts-voice").selectedOptions[0];
-  const payload = {mode, system_prompt:$("#system-prompt").value.trim(), voice:{provider:systemVoice?"system":"edge",voice_id:systemVoice?(state.settings?.voice?.voice_id||"en-IN-NeerjaNeural"):voiceId,gender:systemVoice?(state.settings?.voice?.gender||"female"):(voiceOption?.dataset.gender||"female"),name:systemVoice?"":voiceId,speed:Number($("#speed-range").value),pitch:Number($("#pitch-range").value),volume:Number($("#volume-range").value)}, local_llm:{base_url:$("#local-url").value.trim()||"http://127.0.0.1:11434/v1",model:$("#local-model").value.trim()||"qwen3:0.6b",api_key:$("#local-key").value}, online:{base_url:$("#online-url").value.trim()||"https://generativelanguage.googleapis.com/v1beta/openai",model:$("#online-model").value.trim()||"gemini-3.8-flash",api_key:$("#online-key").value}, conversation:{welcome:$("#welcome-text").value,wake_phrases:lines("#wake-phrases"),stop_phrases:lines("#stop-phrases"),farewell:$("#farewell-text").value,thank_reply:$("#thank-reply").value,no_match_reply:$("#no-match-reply").value,pause_reply:$("#pause-reply").value,listen_timeout:Number($("#listen-timeout").value),phrase_time_limit:Number($("#phrase-limit").value),sleep_after_answer:Number($("#sleep-after-answer").value),mood:$("#robo-mood").value,humor_enabled:$("#humor-enabled").checked,humor_frequency:Number($("#humor-frequency").value)}, microphone:{device_index:Number($("#mic-device").value),energy_threshold:Number($("#mic-threshold").value)}};
+  const choice = $("#tts-voice").value;
+  const [provider, selectedVoiceId] = choice === "system" ? ["system", ""] : choice.includes(":") ? choice.split(":", 2) : ["edge", choice];
+  const systemVoice = provider === "system";
+  const voiceOption = $("#tts-voice").selectedOptions[0];
+  const oldVoice = state.settings?.voice || {};
+  const voiceId = systemVoice ? (oldVoice.voice_id || "en-IN-NeerjaNeural") : selectedVoiceId;
+  const payload = {
+    mode,
+    system_prompt: $("#system-prompt").value.trim(),
+    voice: {
+      provider,
+      voice_id: voiceId,
+      gender: voiceOption?.dataset.gender || oldVoice.gender || "female",
+      name: systemVoice ? "" : voiceId,
+      style: $("#tts-style").value,
+      speed: Number($("#speed-range").value),
+      pitch: Number($("#pitch-range").value),
+      volume: Number($("#volume-range").value),
+    },
+    local_llm: {
+      base_url: $("#local-url").value.trim() || "http://127.0.0.1:11434/v1",
+      model: $("#local-model").value.trim() || "qwen3:0.6b",
+      api_key: $("#local-key").value,
+    },
+    online: {
+      base_url: $("#online-url").value.trim() || "https://generativelanguage.googleapis.com/v1beta/openai",
+      model: $("#online-model").value.trim() || "gemini-3.8-flash",
+      api_key: $("#online-key").value,
+    },
+    conversation: {
+      welcome: $("#welcome-text").value,
+      wake_phrases: lines("#wake-phrases"),
+      stop_phrases: lines("#stop-phrases"),
+      farewell: $("#farewell-text").value,
+      thank_reply: $("#thank-reply").value,
+      no_match_reply: $("#no-match-reply").value,
+      pause_reply: $("#pause-reply").value,
+      listen_timeout: Number($("#listen-timeout").value),
+      phrase_time_limit: Number($("#phrase-limit").value),
+      sleep_after_answer: Number($("#sleep-after-answer").value),
+      mood: $("#robo-mood").value,
+      humor_enabled: $("#humor-enabled").checked,
+      humor_frequency: Number($("#humor-frequency").value),
+    },
+    microphone: {
+      device_index: Number($("#mic-device").value),
+      energy_threshold: Number($("#mic-threshold").value),
+      transcription_provider: $("#transcription-provider").value,
+    },
+  };
   setBusy(button,true,"Saving…");
-  try { const data=await api("/api/settings",{settings:payload}); applySettings(data.settings); $("#save-status").textContent="Saved just now · applies to the next answer"; toast("Robo’s settings are saved."); return true; }
-  catch(e){toast(e.message,true);return false;} finally{setBusy(button,false);}
+  try {
+    const data = await api("/api/settings", {settings:payload});
+    applySettings(data.settings);
+    $("#save-status").textContent = "Saved just now · applies to the next answer";
+    toast("Robo’s settings are saved.");
+    return true;
+  } catch (error) {
+    toast(error.message,true);
+    return false;
+  } finally {
+    setBusy(button,false);
+  }
 }
 
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
@@ -250,7 +340,7 @@ $("#test-online").addEventListener("click",async e=>{document.querySelector('inp
 $("#test-local").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="local"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"local"});toast(result.message||"Local model is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#clear-history").addEventListener("click",async()=>{if(!confirm("Clear all saved conversation and speech history?"))return;try{await api("/api/history/clear",{});state.history=[];renderHistory();toast("History cleared.");}catch(e){toast(e.message,true);}});
 $("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Starting…");try{const r=await api("/api/robot/start",{mode:$("#robot-run-mode").value});renderRobotStatus(r.robot);toast("Robo’s microphone assistant has started.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
-$("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);window.dispatchEvent(new CustomEvent("robo-robot-stopped"));toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 
   // Mode badge click toggles between online and offline
   $("#mode-badge").addEventListener("click", async () => {
@@ -325,7 +415,8 @@ async function guardedRefreshStatus() {
   }
 }
 setTimeout(guardedRefreshStatus, 900);
-setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-overview").classList.contains("active"))refreshHistory();},12000);
+$("#connection-retry")?.addEventListener("click", refreshAll);
+setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains("active")||$("#page-overview").classList.contains("active")))refreshHistory();},12000);
 
 
 // ============================================================================
@@ -363,9 +454,16 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   let speechStartTime = 0;
   let lastSpeechTime = 0;
   let isSpeaking = false;
-  let ambientFloor = 0.02;
+  let ambientFloor = 0.006;
   const silenceTimeoutMs = 1600;
   let wakeRec = null;
+  let wakeStopWaiter = null;
+  let wakeStopRequested = false;
+  let localWakeStartPromise = null;
+  let localWakeStarted = false;
+  let speechOnsetTime = 0;
+  let recordingStartedAt = 0;
+  let discardRecording = false;
 
   // Wake lock and debounce to prevent repeated wake triggers
   let wakeLock = false;
@@ -407,7 +505,7 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
     if (state === "SLEEP") {
       vuFill.style.width = "0%";
-      vuText.textContent = "Ghost Mode active · Listening locally for 'Hey Robo'";
+      vuText.textContent = "Ghost Mode enabled · Starting browser wake listener…";
     } else if (state === "IDLE") {
       vuFill.style.width = "0%";
       vuText.textContent = "Mic ready · Click hero mic to talk";
@@ -415,8 +513,27 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   }
 
   function startBrowserWakeWord() {
+    // Browser SpeechRecognition depends on the browser's speech service and
+    // is not a reliable offline wake detector. Use local Vosk through bot.py
+    // whenever Robo Brain is in Offline or Local Qwen mode.
+    if (!state.settings) {
+      setTimeout(() => {
+        if (ghostToggle.checked && voiceState === "SLEEP") startBrowserWakeWord();
+      }, 400);
+      return;
+    }
+    if (state.settings.mode !== "online") {
+      startLocalWakeWorker();
+      return;
+    }
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) return;
+    if (!SpeechRec) {
+      console.error("[WAKE] Browser does not support SpeechRecognition.");
+      setVoiceUI("IDLE", "Wake-word detection is unavailable in this browser");
+      vuText.textContent = "Use Chrome or Edge, or click the microphone to speak manually.";
+      toast("This browser does not support Hey Robo wake detection. Use Chrome/Edge or click the mic.", true);
+      return;
+    }
     if (wakeRec) {
       try { wakeRec.stop(); } catch {}
     }
@@ -424,6 +541,14 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     wakeRec.continuous = true;
     wakeRec.interimResults = true;
     wakeRec.lang = "en-US";
+
+    wakeRec.onstart = () => {
+      console.info("[WAKE] Browser wake listener started; waiting for Hey Robo.");
+      if (ghostToggle.checked && voiceState === "SLEEP") {
+        setVoiceUI("SLEEP", "Waiting for ‘Hey Robo’…");
+        vuText.textContent = "Wake-word listener active · Say ‘Hey Robo’";
+      }
+    };
 
     wakeRec.onresult = (e) => {
       // Ignore if robot is speaking, processing, or already awake
@@ -436,39 +561,116 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const transcript = e.results[i][0].transcript.toLowerCase();
         // Reliable wake phrase check (debounce prevents multi-firing)
-        if (/hey\s*robo|hey\s*robot|hello\s*robo|hello\s*robot|hi\s*robo/.test(transcript)) {
+        // Browser recognition may add punctuation ("Hey, Robo") or vary spaces.
+        if (/\b(?:hey|hello|hi)[\W_]*(?:robo|robot)\b/.test(transcript)) {
           wakeLock = true;
           lastWakeTime = now;
-          console.log("[GHOST] Wake phrase detected:", transcript);
+          console.info("[WAKE] Wake phrase detected:", transcript);
           triggerWakeUp();
           break;
         }
       }
     };
 
-    wakeRec.onerror = () => {
-      if (ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
+    wakeRec.onerror = (event) => {
+      const error = event?.error || "unknown";
+      console.error("[WAKE] Browser wake listener error:", error, event);
+      if (["not-allowed", "service-not-allowed", "audio-capture"].includes(error)) {
+        const message = error === "audio-capture"
+          ? "The browser cannot access a microphone. Check Windows and site microphone settings."
+          : "Microphone or speech access is blocked. Allow it for 127.0.0.1 in Chrome, then reload.";
+        setVoiceUI("IDLE", "Wake-word listener could not start");
+        vuText.textContent = message;
+        toast(message, true);
+        return;
+      }
+      if (!wakeStopRequested && ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
         setTimeout(() => { try { wakeRec?.start(); } catch {} }, 1200);
       }
     };
 
     wakeRec.onend = () => {
-      if (ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
+      const stoppedByRequest = wakeStopRequested;
+      if (wakeStopWaiter) {
+        const resolve = wakeStopWaiter;
+        wakeStopWaiter = null;
+        resolve();
+      }
+      if (!stoppedByRequest && ghostToggle.checked && voiceState === "SLEEP" && !wakeLock) {
         setTimeout(() => { try { wakeRec?.start(); } catch {} }, 400);
       }
     };
 
-    try { wakeRec.start(); } catch {}
+    try {
+      wakeRec.start();
+    } catch (error) {
+      console.error("[WAKE] Could not start browser wake listener:", error);
+      setVoiceUI("IDLE", "Wake-word listener could not start");
+      vuText.textContent = "Click the microphone once, allow access, then enable Ghost Mode again.";
+      toast("Could not start Hey Robo detection: " + error.message, true);
+    }
   }
 
   function stopBrowserWakeWord() {
-    if (wakeRec) {
-      try { wakeRec.stop(); } catch {}
+    if (!wakeRec) return Promise.resolve();
+    const rec = wakeRec;
+    wakeStopRequested = true;
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        wakeStopRequested = false;
+        if (wakeStopWaiter === finish) wakeStopWaiter = null;
+        resolve();
+      };
+      const timer = setTimeout(finish, 900);
+      wakeStopWaiter = finish;
+      try { rec.stop(); } catch { finish(); }
+    });
+  }
+
+  async function startLocalWakeWorker() {
+    if (localWakeStartPromise || localWakeStarted || !ghostToggle.checked) return;
+    localWakeStartPromise = (async () => {
+      await stopBrowserWakeWord();
+      setVoiceUI("SLEEP", "Starting local Hey Robo listener…");
+      vuText.textContent = "Starting offline Vosk wake-word detection…";
+      try {
+        const result = await api("/api/robot/start", {mode: "ghost"});
+        renderRobotStatus(result.robot);
+        if (!result.robot?.running) throw new Error("The local robot listener did not start.");
+        localWakeStarted = true;
+        setVoiceUI("SLEEP", "Listening locally for ‘Hey Robo’…");
+        vuText.textContent = "Offline Vosk wake listener active · Say ‘Hey Robo’";
+        console.info("[WAKE] Offline mode is listening through the local Vosk robot worker.");
+      } catch (error) {
+        setVoiceUI("IDLE", "Offline wake listener could not start");
+        vuText.textContent = error.message;
+        toast("Offline wake listener failed: " + error.message, true);
+        console.error("[WAKE] Local Vosk listener failed to start:", error);
+      }
+    })().finally(() => { localWakeStartPromise = null; });
+    return localWakeStartPromise;
+  }
+
+  async function stopLocalWakeWorker() {
+    if (!localWakeStarted) return;
+    localWakeStarted = false;
+    try {
+      const result = await api("/api/robot/stop", {});
+      renderRobotStatus(result.robot);
+      console.info("[WAKE] Local Vosk listener stopped.");
+    } catch (error) {
+      toast("Could not stop the local wake listener: " + error.message, true);
     }
   }
 
   async function triggerWakeUp() {
-    stopBrowserWakeWord();
+    // SpeechRecognition owns a browser mic stream. Wait for its onend before
+    // opening MediaRecorder's stream, otherwise the first question can be lost.
+    await stopBrowserWakeWord();
     playWakeBeep();
     toast("Wake-word detected! Robo is listening.");
     const ready = await setupAudio();
@@ -487,12 +689,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 16000,
-          channelCount: 1
+          sampleRate: { ideal: 16000 },
+          channelCount: { ideal: 1 }
         }
       });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AudioContextClass({ sampleRate: 16000 });
+      try { audioCtx = new AudioContextClass({ sampleRate: 16000 }); }
+      catch { audioCtx = new AudioContextClass(); }
 
       const source = audioCtx.createMediaStreamSource(micStream);
 
@@ -516,6 +719,8 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       analyser.fftSize = 512;
 
       const dest = audioCtx.createMediaStreamDestination();
+      dest.channelCount = 1;
+      dest.channelCountMode = "explicit";
 
       source.connect(highpass);
       highpass.connect(compressor);
@@ -540,8 +745,14 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       mediaRecorder.onstop = handleRecordingComplete;
 
       startVADLoop();
+      console.info(`[RECORD] Mic ready: requested mono 16 kHz, AudioContext ${audioCtx.sampleRate} Hz.`);
       return true;
     } catch (err) {
+      if (micStream) micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+      if (audioCtx) audioCtx.close().catch(() => {});
+      audioCtx = null;
+      analyser = null;
       toast("Microphone access denied: " + err.message, true);
       setVoiceUI("IDLE", "Microphone permission needed");
       wakeLock = false;
@@ -569,9 +780,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       const meterPercent = Math.min(100, Math.round(rms * 400));
       vuFill.style.width = meterPercent + "%";
 
-      ambientFloor = ambientFloor * 0.97 + rms * 0.03;
-      const speechThreshold = Math.max(0.032, ambientFloor * 2.0);
-      const silenceThreshold = Math.max(0.018, ambientFloor * 1.3);
+      // Adapt only while waiting for a phrase. Learning from the user's voice
+      // makes the threshold chase speech and can stop long/quiet questions early.
+      if (voiceState === "LISTENING" && !isSpeaking) {
+        ambientFloor = ambientFloor * 0.98 + rms * 0.02;
+      }
+      const speechThreshold = Math.max(0.018, ambientFloor * 1.8);
+      const silenceThreshold = Math.max(0.010, ambientFloor * 1.25);
 
       const now = Date.now();
 
@@ -587,19 +802,26 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       if (voiceState === "LISTENING") {
         if (rms > speechThreshold) {
           if (!isSpeaking) {
-            isSpeaking = true;
-            speechStartTime = now;
-            lastSpeechTime = now;
-            label.textContent = "Listening to your question…";
-            vuText.textContent = "Speech detected · Speak naturally…";
-            clearTimeout(listenTimeoutTimer);
+            if (!speechOnsetTime) speechOnsetTime = now;
+            // Reject isolated clicks without trimming onset audio (recording is
+            // already rolling into MediaRecorder's chunks).
+            if (now - speechOnsetTime >= 100) {
+              isSpeaking = true;
+              speechStartTime = speechOnsetTime;
+              lastSpeechTime = now;
+              label.textContent = "Listening to your question…";
+              vuText.textContent = "Speech detected · Speak naturally…";
+              clearTimeout(listenTimeoutTimer);
+            }
           } else {
             lastSpeechTime = now;
           }
-        } else if (isSpeaking) {
+        } else if (!isSpeaking) {
+          speechOnsetTime = 0;
+        } else {
           if (rms > silenceThreshold) {
             lastSpeechTime = now;
-          } else if ((now - lastSpeechTime > silenceTimeoutMs) && (now - speechStartTime > 600)) {
+          } else if ((now - lastSpeechTime > silenceTimeoutMs) && (now - speechStartTime > 250)) {
             // Natural pause detected after user spoke -> process question
             isSpeaking = false;
             vuText.textContent = "Question complete · Processing…";
@@ -607,8 +829,9 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
             if (mediaRecorder && mediaRecorder.state === "recording") {
               mediaRecorder.stop();
             }
-          } else if (now - speechStartTime > 14000) {
-            // Max phrase limit (14s)
+          } else if (now - speechStartTime > Math.min(30000, Math.max(5000,
+            Number(state.settings?.conversation?.phrase_time_limit || 15) * 1000))) {
+            // Respect the dashboard phrase limit (up to 30 seconds).
             isSpeaking = false;
             clearTimeout(listenTimeoutTimer);
             if (mediaRecorder && mediaRecorder.state === "recording") {
@@ -629,13 +852,22 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       audioCtx.resume();
     }
     isSpeaking = false;
+    speechOnsetTime = 0;
     recordedChunks = [];
     setVoiceUI("LISTENING", "Listening… Speak your question now");
     vuText.textContent = "Listening for question (far-field active)…";
 
     // Start recording immediately so the user's first words are never clipped
     if (mediaRecorder && mediaRecorder.state !== "recording") {
-      try { mediaRecorder.start(100); } catch {}
+      try {
+        mediaRecorder.start(100);
+        recordingStartedAt = Date.now();
+        console.info("[RECORD] Recording started after wake confirmation.");
+      } catch (error) {
+        console.error("[ERROR] Could not start microphone recording:", error);
+        toast("Could not start recording: " + error.message, true);
+        if (ghostToggle.checked) enterSleepMode();
+      }
     }
 
     // Safety timeout: if no speech is detected after 8 seconds, go back to sleep
@@ -655,9 +887,26 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
   function enterSleepMode() {
     clearTimeout(listenTimeoutTimer);
     stopBrowserWakeWord();
+    if (voiceState === "LISTENING" && mediaRecorder?.state === "recording") {
+      discardRecording = true;
+      recordedChunks = [];
+      try { mediaRecorder.stop(); } catch {}
+    }
+    // Release MediaRecorder's mic before the browser wake recognizer reopens it.
+    vadActive = false;
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+    }
+    if (audioCtx) {
+      const oldContext = audioCtx;
+      audioCtx = null;
+      analyser = null;
+      oldContext.close().catch(() => {});
+    }
     wakeLock = false; // Release wake lock
     setVoiceUI("SLEEP", "Ghost Mode: Sleeping silently · Say 'Hey Robo' to wake");
-    vuText.textContent = "Ghost Mode active · Listening locally for 'Hey Robo'";
+    vuText.textContent = "Ghost Mode enabled · Starting browser wake listener…";
     setTimeout(() => {
       if (ghostToggle.checked && voiceState === "SLEEP") {
         startBrowserWakeWord();
@@ -667,6 +916,12 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
   async function handleRecordingComplete() {
     clearTimeout(listenTimeoutTimer);
+    if (discardRecording) {
+      discardRecording = false;
+      recordedChunks = [];
+      console.info("[RECORD] Discarded because listening was cancelled.");
+      return;
+    }
 
     if (!recordedChunks.length) {
       if (ghostToggle.checked) {
@@ -683,7 +938,10 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
     recordedChunks = [];
 
     // Filter tiny clicks / ambient coughs (<1200 bytes)
-    if (blob.size < 1200) {
+    const capturedMs = Date.now() - recordingStartedAt;
+    console.info(`[RECORD] Recording stopped: ${(capturedMs / 1000).toFixed(2)}s, ${blob.size} bytes, ${blob.type || "unknown audio"}.`);
+    if (blob.size < 500 || capturedMs < 300) {
+      console.warn("[STT] Empty/invalid transcript: recording too short or empty.");
       if (ghostToggle.checked) {
         enterSleepMode();
       } else if (continuousToggle.checked) {
@@ -694,10 +952,15 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       return;
     }
 
-    setVoiceUI("PROCESSING", "Robo is thinking with Gemini…");
-    vuText.textContent = "Whisper STT & Gemini processing…";
+    setVoiceUI("PROCESSING", "Robo is transcribing and thinking…");
+    vuText.textContent = "Speech recognition and answer processing…";
+    // Clear the last turn while this audio is processed so the UI cannot look
+    // as if Robo is replying to the previous question during network latency.
+    userText.textContent = "Transcribing the current question…";
+    botText.textContent = "Preparing an answer to the current question…";
 
     try {
+      console.info("[STT] Transcription started on the captured question; previous turn cleared.");
       const response = await fetch("/api/ask-voice", {
         method: "POST",
         headers: { "Content-Type": blob.type || "audio/webm" },
@@ -720,10 +983,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
         }
         throw new Error(data.message || data.error || "Could not process speech");
       }
+      if (data.fallback_notice) console.warn("[STT]", data.fallback_notice);
 
       // Display recognized transcript & response
       userText.textContent = data.transcript || "—";
       botText.textContent = data.answer || "—";
+      if (data.transcript) console.info("[STT] Transcript:", data.transcript);
+      else console.warn("[STT] Empty/invalid transcript.");
 
       // Append to live history
       if (data.transcript && data.answer) {
@@ -764,32 +1030,67 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
   function playAudio(url) {
     return new Promise((resolve) => {
-      if (!url) {
-        onAudioFinished();
-        return resolve();
-      }
-      player.src = url;
-      player.onended = () => {
-        onAudioFinished();
-        resolve();
-      };
-      player.onerror = () => {
+      let finished = false;
+      let fallbackStarted = false;
+      let audioPlaybackStarted = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        console.info("[TTS] Playback completed.");
         onAudioFinished();
         resolve();
       };
-      player.play().catch(() => {
-        if (window.speechSynthesis && botText.textContent) {
-          const utter = new SpeechSynthesisUtterance(botText.textContent);
-          utter.onend = () => {
-            onAudioFinished();
-            resolve();
-          };
-          window.speechSynthesis.speak(utter);
-        } else {
-          onAudioFinished();
-          resolve();
+      const browserSpeechFallback = () => {
+        // Both the media error event and play() rejection can fire for one
+        // failed clip. Start fallback speech only once to prevent two voices.
+        if (finished || fallbackStarted || audioPlaybackStarted) return;
+        fallbackStarted = true;
+        try { player.pause(); player.currentTime = 0; } catch {}
+        console.info("[TTS] Starting one browser speech fallback.");
+        if (window.speechSynthesis && window.SpeechSynthesisUtterance && botText.textContent.trim()) {
+          const utterance = new SpeechSynthesisUtterance(botText.textContent.trim());
+          const savedVoice = state.settings?.voice || {};
+          utterance.lang = "en-IN";
+          utterance.rate = Math.max(.65, Math.min(1.4, Number(savedVoice.speed) || 1));
+          utterance.pitch = Math.max(.5, Math.min(2, 1 + (Number(savedVoice.pitch) || 0) / 10));
+          utterance.volume = Math.max(0, Math.min(1, (Number(savedVoice.volume) || 100) / 100));
+          const voices = window.speechSynthesis.getVoices();
+          const gender = String(savedVoice.gender || "").toLowerCase();
+          utterance.voice = voices.find(voice => /^en[-_]in$/i.test(voice.lang) && (!gender || voice.name.toLowerCase().includes(gender)))
+            || voices.find(voice => /^en[-_]in$/i.test(voice.lang))
+            || null;
+          utterance.onend = finish;
+          utterance.onerror = finish;
+          try { window.speechSynthesis.speak(utterance); }
+          catch { finish(); }
+          return;
         }
-      });
+        finish();
+      };
+      if (!url) {
+        return browserSpeechFallback();
+      }
+      fetch(url, {cache:"no-store"}).then(async response => {
+        if (!response.ok) throw new Error("Neural voice audio is unavailable.");
+        const audioUrl = URL.createObjectURL(await response.blob());
+        const releaseAudio = () => URL.revokeObjectURL(audioUrl);
+        player.src = audioUrl;
+        const configuredVolume = Number(state.settings?.voice?.volume);
+        player.volume = Math.max(0, Math.min(1, Number.isFinite(configuredVolume) ? configuredVolume / 100 : 1));
+        player.onplaying = () => { audioPlaybackStarted = true; };
+        player.onended = () => { releaseAudio(); finish(); };
+        player.onerror = () => {
+          releaseAudio();
+          if (audioPlaybackStarted) finish();
+          else browserSpeechFallback();
+        };
+        try { await player.play(); }
+        catch (_) {
+          releaseAudio();
+          if (audioPlaybackStarted) finish();
+          else browserSpeechFallback();
+        }
+      }).catch(browserSpeechFallback);
     });
   }
 
@@ -824,6 +1125,10 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
   // Event Listeners
   micHero.addEventListener("click", async () => {
+    if (state.settings?.mode !== "online" && ghostToggle.checked) {
+      toast("Offline Ghost Mode is listening through the local Vosk robot. Say ‘Hey Robo’ to wake it.");
+      return;
+    }
     if (voiceState === "SPEAKING") {
       interruptSpeech();
       return;
@@ -832,6 +1137,13 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
       if (ghostToggle.checked) {
         enterSleepMode();
       } else {
+        clearTimeout(listenTimeoutTimer);
+        if (mediaRecorder?.state === "recording") {
+          discardRecording = true;
+          recordedChunks = [];
+          try { mediaRecorder.stop(); } catch {}
+        }
+        isSpeaking = false;
         setVoiceUI("IDLE", "Conversation paused");
       }
       return;
@@ -842,12 +1154,52 @@ setInterval(()=>{if($("#page-history").classList.contains("active")||$("#page-ov
 
   interruptBtn.addEventListener("click", interruptSpeech);
 
+  window.addEventListener("robo-settings-applied", async (event) => {
+    if (!ghostToggle.checked) return;
+    if (event.detail?.mode === "online") {
+      await stopLocalWakeWorker();
+      if (voiceState === "SLEEP") startBrowserWakeWord();
+    } else {
+      await stopBrowserWakeWord();
+      startLocalWakeWorker();
+    }
+  });
+
+  window.addEventListener("robo-runtime-update", (event) => {
+    if (state.settings?.mode === "online") return;
+    const {running, activity = {}, phase = "STOPPED"} = event.detail || {};
+    if (!running) {
+      setVoiceUI("IDLE", "Offline robot stopped · Start listening on Overview");
+      vuText.textContent = "Local Vosk wake listener is stopped.";
+      return;
+    }
+    if (phase === "SLEEP") {
+      setVoiceUI("SLEEP", "Waiting for ‘Hey Robo’…");
+      vuText.textContent = "Offline Vosk wake listener active · Say ‘Hey Robo’";
+    } else if (phase === "LISTENING") {
+      setVoiceUI("LISTENING", "Robo heard you · Ask your question now");
+      vuText.textContent = "Recording your question from the local microphone…";
+    } else if (phase === "TRANSCRIPT" || phase === "THINKING") {
+      setVoiceUI("PROCESSING", "Robo is understanding your question…");
+      vuText.textContent = activity.transcript ? `Heard: ${activity.transcript}` : "Searching the offline SIT knowledge base…";
+    } else if (phase === "SPEAKING") {
+      setVoiceUI("SPEAKING", "Robo is speaking the answer…");
+      vuText.textContent = activity.answer || "Speaking the offline answer…";
+    } else if (phase === "READY") {
+      setVoiceUI("SLEEP", "Waiting for ‘Hey Robo’…");
+      vuText.textContent = "Offline Vosk wake listener active · Say ‘Hey Robo’";
+    }
+  });
+
+  window.addEventListener("robo-robot-stopped", () => { localWakeStarted = false; });
+
   ghostToggle.addEventListener("change", () => {
     if (ghostToggle.checked) {
       toast("Ghost Mode active: Robo is sleeping. Say 'Hey Robo' to wake.");
       enterSleepMode();
     } else {
       stopBrowserWakeWord();
+      stopLocalWakeWorker();
       wakeLock = false;
       setVoiceUI("IDLE", "Ghost Mode disabled · Click to start");
     }

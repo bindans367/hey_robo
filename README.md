@@ -7,7 +7,7 @@ A **100% offline**, voice-interactive conversational AI assistant built for a **
 ## 🌟 Key Capabilities
 
 1. **Offline Campus Assistant**: Speech recognition and SIT answers run locally. Optional Indian English neural speech uses an internet connection; the installed Windows voice remains available offline.
-2. **Offline Speech Recognition (STT)**: Powered by multilingual Faster-Whisper `large-v3-turbo` (CPU int8) with Vosk fallback. The first launch downloads the model once; later transcription runs offline. It detects language automatically and is more tolerant of varied accents than the previous English-only model. Microphone capture adapts its energy threshold as room and motor noise change, allows longer pauses, and avoids a second aggressive VAD pass that could clip soft words. Set `HUMANOID_WHISPER_MODEL=small.en` before launch if you prefer lower latency over language coverage and accuracy, or set `HUMANOID_ASR_LANGUAGE=en` to force English.
+2. **Offline Speech Recognition (STT)**: Uses cached Faster-Whisper `tiny.en` (CPU int8) for low-latency English transcription, with Vosk retained for wake-word detection and fallback. STT loads lazily once, so dashboard TTS cannot disable later recognition. Capture adapts to room noise, waits for pauses up to 1.45 seconds, converts the selected microphone's native rate/width into mono 16 kHz PCM, and avoids a second aggressive VAD pass that could clip quiet syllables. Online mode can use Gemini's transcription model with SIT vocabulary hints; if it fails, recognition falls back to local Whisper.
 3. **Speech Synthesis (TTS)**: The dashboard can select Indian English neural voices or the local Windows SAPI voice, with adjustable pace, pitch, and volume. Acronym pronunciation expansion is supported. Neural speech sends text to Microsoft for synthesis and needs internet; system voice works offline.
 4. **Pronunciation & Accent Robustness**:
    - Handles Karnataka/Indian English accents, colloquial phrasing, and speech-to-text acoustic mistranscriptions (e.g. *"safety"* $\rightarrow$ *"SIT"*, *"bella auditor young"* $\rightarrow$ *"Birla Auditorium"*, *"principle"* $\rightarrow$ *"Principal"*, *"hall sean"* $\rightarrow$ *"Halcyon"*).
@@ -94,7 +94,7 @@ python bot.py --text
 python bot.py --ptt
 ```
 - Press Enter before each question. Use `python find_mic.py` to inspect available input devices; select one with `python bot.py --mic <device-index>`.
-- To check the live speech pipeline, run `python test_mic_fixed.py`.
+- To test microphone/STT without wake-word detection or Gemini, run `python test_mic_stt.py`. It guides you through normal English, Indian English, long and short questions, pauses, background noise, and low-volume speech. Select a device with `python test_mic_stt.py --mic <device-index>`.
 
 ### 4. Run Pronunciation & Accent Benchmark Test
 ```powershell

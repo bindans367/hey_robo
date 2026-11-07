@@ -41,17 +41,10 @@ def speech_worker():
         text, done = item
         try:
             if engine is None:
-                # The dashboard needs SAPI only; don't load the Whisper model.
-                previous = os.environ.get("HUMANOID_TTS_ONLY")
-                os.environ["HUMANOID_TTS_ONLY"] = "1"
-                try:
-                    import voice_engine
-                    engine = voice_engine
-                finally:
-                    if previous is None:
-                        os.environ.pop("HUMANOID_TTS_ONLY", None)
-                    else:
-                        os.environ["HUMANOID_TTS_ONLY"] = previous
+                # STT models are lazy-loaded only by a transcription request.
+                # A TTS import therefore cannot poison later Whisper requests.
+                import voice_engine
+                engine = voice_engine
             done["spoken"] = engine.speak(text)
             last_tts_status = engine.get_tts_status()
             done["voice_status"] = dict(last_tts_status)
@@ -242,13 +235,20 @@ class Handler(BaseHTTPRequestHandler):
             text_to_speak = params.get("text", [""])[0].strip()
             if not text_to_speak:
                 return self.send_json({"error": "Missing text parameter"}, 400)
+            if len(text_to_speak) > 12000:
+                return self.send_json({"error": "Speech text is limited to 12,000 characters."}, 400)
             try:
                 import voice_engine
+                tts_started = time.perf_counter()
                 audio_bytes = voice_engine.synthesize_to_bytes(text_to_speak)
+                print(f"[PIPELINE] TTS generation completed in {time.perf_counter() - tts_started:.2f}s.", flush=True)
                 if not audio_bytes:
                     return self.send_json({"error": "TTS synthesis returned no audio"}, 500)
                 self.send_response(200)
-                self.send_header("Content-Type", "audio/mpeg")
+                # Gemini returns WAV audio; Edge TTS returns MP3. Browsers may
+                # refuse playback if the response advertises the wrong format.
+                audio_mime = "audio/wav" if audio_bytes[:4] == b"RIFF" else "audio/mpeg"
+                self.send_header("Content-Type", audio_mime)
                 self.send_header("Content-Length", str(len(audio_bytes)))
                 self.send_header("Cache-Control", "public, max-age=3600")
                 self.end_headers()
@@ -284,22 +284,48 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         try:
             if path in ("/api/transcribe", "/api/ask-voice"):
+                pipeline_started = time.perf_counter()
                 if length > 25_000_000:
                     return self.send_json({"error": "Audio file too large"}, 400)
                 audio_bytes = self.rfile.read(length)
                 filename = "audio.webm" if "webm" in content_type else "audio.wav"
-                import voice_engine
-                transcript = voice_engine.transcribe_bytes(audio_bytes, filename=filename)
+                settings = core.get_settings()
+                stt_provider = settings.get("microphone", {}).get("transcription_provider", "auto")
+                use_gemini = stt_provider == "gemini" or (stt_provider == "auto" and settings.get("mode") == "online")
+                transcript = ""
+                gemini_error = ""
+                if use_gemini:
+                    core.publish_runtime("TRANSCRIPT", detail="Transcribing with Gemini speech recognition…")
+                    vocabulary = []
+                    for entry in read_knowledge():
+                        vocabulary.append(entry.get("title", ""))
+                        vocabulary.extend(entry.get("keywords", [])[:3])
+                    try:
+                        print("[STT] Transcription started with Gemini.", flush=True)
+                        transcript = core.transcribe_with_gemini(audio_bytes, content_type, vocabulary)
+                    except Exception as exc:
+                        gemini_error = str(exc)
+                        print(f"[ERROR] Gemini STT failed; falling back to local Faster-Whisper: {gemini_error}", file=sys.stderr, flush=True)
+                if not use_gemini or gemini_error:
+                    print("[STT] Local transcription fallback selected.", flush=True)
+                    import voice_engine
+                    transcript = voice_engine.transcribe_bytes(audio_bytes, filename=filename)
+                print(f"[PIPELINE] STT completed in {time.perf_counter() - pipeline_started:.2f}s.", flush=True)
+                if transcript:
+                    print(f"[STT] Transcript: {transcript}", flush=True)
+                else:
+                    print("[STT] Empty/invalid transcript.", flush=True)
                 
                 if path == "/api/transcribe":
-                    return self.send_json({"ok": True, "text": transcript})
+                    return self.send_json({"ok": True, "text": transcript, "provider": "gemini" if use_gemini and not gemini_error else "whisper",
+                                           "fallback_notice": "Gemini was unavailable; local Whisper recognized the audio." if gemini_error else ""})
                 
                 # /api/ask-voice: end-to-end low-latency processing
                 if not transcript:
+                    print("[STT] Empty/invalid transcript; skipping answer generation.", flush=True)
                     return self.send_json({"ok": False, "reason": "no_speech", "message": "No clear speech detected. Please speak closer or louder."})
                 
                 core.publish_runtime("THINKING", transcript=transcript, detail="Processing speech with AI...")
-                settings = core.get_settings()
                 conv = settings.get("conversation", {})
                 norm_cmd = " ".join(re.sub(r"[^\w\s]", " ", transcript.lower()).split())
                 
@@ -316,7 +342,9 @@ class Handler(BaseHTTPRequestHandler):
                         "audio_url": f"/api/tts?text={quote(farewell)}"
                     })
                 
+                answer_started = time.perf_counter()
                 result = core.answer_query(transcript, matcher, source="voice_web")
+                print(f"[PIPELINE] Answer generation completed in {time.perf_counter() - answer_started:.2f}s.", flush=True)
                 ans_text = result.get("answer", "")
                 core.publish_runtime("SPEAKING", transcript=transcript, answer=ans_text, title=result.get("title", ""), detail="Robo is speaking response.")
                 return self.send_json({
@@ -325,7 +353,8 @@ class Handler(BaseHTTPRequestHandler):
                     "result": result,
                     "answer": ans_text,
                     "title": result.get("title", ""),
-                    "audio_url": f"/api/tts?text={quote(ans_text)}"
+                    "audio_url": f"/api/tts?text={quote(ans_text)}",
+                    "fallback_notice": "Gemini transcription was unavailable; used local Faster-Whisper." if gemini_error else ""
                 })
 
             data = self.body_json()
@@ -458,7 +487,7 @@ class Handler(BaseHTTPRequestHandler):
                     test_url = f"{endpoint.scheme}://{endpoint.netloc}/api/chat"
                     test_payload.update({"think": False, "options": {"temperature": 0.2}})
                 else:
-                    test_payload["max_tokens"] = 1000
+                    test_payload["max_tokens"] = 80
                 req = Request(test_url,
                     data=json.dumps(test_payload).encode(),
                     method="POST", headers=headers)
@@ -468,8 +497,11 @@ class Handler(BaseHTTPRequestHandler):
                     ssl_ctx = ssl.create_default_context(cafile=certifi.where())
                 except Exception:
                     pass
-                with urlopen(req, timeout=20, context=ssl_ctx) as response:
-                    result = json.loads(response.read().decode("utf-8"))
+                try:
+                    with urlopen(req, timeout=20, context=ssl_ctx) as response:
+                        result = json.loads(response.read().decode("utf-8"))
+                except HTTPError as exc:
+                    return self.send_json({"error": core.describe_provider_error(exc, key)}, 502)
                 label = "Local model" if test_mode == "local" else "Cloud model"
                 if is_ollama:
                     reply = result.get("message", {}).get("content", "")

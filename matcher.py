@@ -28,6 +28,15 @@ COMMON_STOPWORDS = {
     "information", "please", "sir", "madam", "give", "know", "there", "do", "we"
 }
 
+# When a question names a specific campus topic, rank a matching topic record
+# ahead of a broad institute overview that happens to share an exact entity name.
+SPECIALIZED_QUERY_TERMS = {
+    "principal", "dean", "faculty", "professor", "hod", "placement", "admission",
+    "fee", "hostel", "scholarship", "library", "department", "laboratory", "lab",
+    "club", "transport", "bus", "canteen", "ranking", "award", "sports", "exam",
+    "calendar", "attendance", "scholarship", "internship", "recruiter",
+}
+
 
 class KnowledgeMatcher:
     def __init__(self, knowledge_path: str = KNOWLEDGE_PATH):
@@ -270,7 +279,24 @@ class KnowledgeMatcher:
             score = self.score_item(query_norm, raw_query, item)
             scored_results.append((score, item))
 
-        scored_results.sort(key=lambda x: (x[0], x[1].get("updated_at", "")), reverse=True)
+        query_intents = set(query_norm.split()) & SPECIALIZED_QUERY_TERMS
+
+        def matches_specialized_intent(item: Dict) -> bool:
+            if not query_intents:
+                return False
+            item_text = normalize_query(" ".join([
+                str(item.get("title", "")),
+                " ".join(str(term) for term in item.get("keywords", [])),
+            ]))
+            return bool(query_intents & set(item_text.split()))
+
+        # Resolve equal fuzzy/exact scores by the question's named intent first.
+        # Example: "principal of Siddaganga Institute of Technology" also exactly
+        # contains the broad "Siddaganga Institute of Technology" keyword.
+        scored_results.sort(
+            key=lambda x: (matches_specialized_intent(x[1]), x[0], x[1].get("updated_at", "")),
+            reverse=True,
+        )
 
         best_score, best_item = scored_results[0] if scored_results else (0.0, None)
         # A human-authored correction in the dashboard overrides the scraped

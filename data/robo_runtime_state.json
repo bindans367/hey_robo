@@ -1,8 +1,8 @@
 {
-  "phase": "LISTENING",
+  "phase": "INTERRUPTING",
   "transcript": "",
   "answer": "",
   "title": "",
-  "detail": "Listening for hey robo or a SIT question... The transcript will appear when the utterance is recognized.",
-  "updated_at": "2026-11-02T22:49:17+05:30"
+  "detail": "Speech interrupted by the operator.",
+  "updated_at": "2026-11-07T16:49:27+05:30"
 }
