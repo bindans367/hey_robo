@@ -25,7 +25,7 @@ DEFAULT_SETTINGS = {
     "system_prompt": "You are Robo, a friendly, clear, respectful humanoid campus guide for Siddaganga Institute of Technology. Speak in simple natural language. For SIT facts, use the supplied knowledge context and never invent people, dates, numbers, or policies. If the answer is unknown, say so and suggest checking with the college.",
     "voice": {"gender": "female", "name": "", "provider": "gemini", "voice_id": "Kore", "style": "indian_clear", "speed": 0.95, "pitch": 0, "volume": 100},
     "local_llm": {"base_url": "http://127.0.0.1:11434/v1", "model": "qwen3:0.6b", "api_key": ""},
-    "online": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "model": "gemini-3.8-flash", "tts_model": "gemini-3.8-flash-tts", "transcription_model": "gemini-3.5-transcribe", "api_key": ""},
+    "online": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "model": "gemini-3.8-flash", "tts_model": "gemini-3.8-flash-tts", "transcription_model": "gemini-3.5-transcribe", "api_key": "", "transcription_api_key": ""},
     "conversation": {
         "welcome": "Welcome to SIT. I’m Robo, your campus guide.",
         "wake_phrases": ["hey robo", "hey robot", "hello robo", "hello robot", "hit o boo", "hitable", "here it will go"],
@@ -75,15 +75,20 @@ def describe_provider_error(exc, api_key=""):
 def transcribe_with_gemini(audio_bytes, mime_type="audio/webm", vocabulary=()):
     """Transcribe one microphone turn with Gemini's multilingual transcription model."""
     settings = get_settings()
-    api_key = settings["online"].get("api_key", "").strip()
+    online = settings["online"]
+    host = (urlparse(online.get("base_url", "")).hostname or "").lower()
+    api_key = (online.get("transcription_api_key") or os.environ.get("GEMINI_API_KEY") or "").strip()
+    if not api_key and host == "generativelanguage.googleapis.com":
+        # Backward-compatible for existing Gemini-only settings.
+        api_key = online.get("api_key", "").strip()
     if not api_key:
-        raise RuntimeError("Gemini speech recognition needs the API key saved in Voice & AI settings.")
+        raise RuntimeError("Gemini speech recognition needs a Gemini key. Add it in the separate speech recognition key field or set GEMINI_API_KEY on the server.")
     mime_type = str(mime_type or "audio/webm").split(";", 1)[0].strip().lower()
     if mime_type not in {"audio/webm", "audio/wav", "audio/x-wav", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/flac", "audio/aac"}:
         mime_type = "audio/webm"
     terms = list(dict.fromkeys(str(term).strip() for term in vocabulary if str(term).strip()))[:100]
     payload = {
-        "model": settings["online"].get("transcription_model", "gemini-3.5-transcribe"),
+        "model": online.get("transcription_model", "gemini-3.5-transcribe"),
         # Inline audio is transient, so microphone turns are not retained in
         # Gemini Files storage. Keep vocabulary as a first-class ASR hint.
         "input": [{"type": "audio", "data": base64.b64encode(audio_bytes).decode("ascii"), "mime_type": mime_type}],
@@ -163,9 +168,14 @@ def get_settings():
         is_public = os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes")
         if is_public and not (isinstance(saved, dict) and saved.get("mode") in ("offline", "local", "online")):
             merged["mode"] = "online"
+        online_host = (urlparse(merged["online"].get("base_url", "")).hostname or "").lower()
         if os.environ.get("GEMINI_API_KEY"):
-            merged["online"]["api_key"] = os.environ["GEMINI_API_KEY"]
-        elif os.environ.get("ROBO_BRAIN_API_KEY"):
+            merged["online"]["transcription_api_key"] = os.environ["GEMINI_API_KEY"]
+            if online_host == "generativelanguage.googleapis.com":
+                merged["online"]["api_key"] = os.environ["GEMINI_API_KEY"]
+        if os.environ.get("OPENROUTER_API_KEY") and online_host == "openrouter.ai":
+            merged["online"]["api_key"] = os.environ["OPENROUTER_API_KEY"]
+        elif os.environ.get("ROBO_BRAIN_API_KEY") and online_host != "openrouter.ai":
             merged["online"]["api_key"] = os.environ["ROBO_BRAIN_API_KEY"]
         if merged["mode"] not in ("offline", "local", "online"):
             merged["mode"] = "offline"
@@ -225,6 +235,7 @@ def save_settings(new_settings):
         settings[section]["base_url"] = str(settings[section].get("base_url", "")).rstrip("/")
         settings[section]["model"] = str(settings[section].get("model", "")).strip()
         settings[section]["api_key"] = str(settings[section].get("api_key", "")).strip()
+    settings["online"]["transcription_api_key"] = str(settings["online"].get("transcription_api_key", "")).strip()
     settings["online"]["tts_model"] = str(settings["online"].get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts"
     settings["online"]["transcription_model"] = str(settings["online"].get("transcription_model", "gemini-3.5-transcribe")).strip() or "gemini-3.5-transcribe"
     conversation = settings["conversation"]
@@ -500,6 +511,9 @@ def answer_query(query, matcher, source="dashboard"):
             headers = {"Content-Type": "application/json"}
             if key:
                 headers["Authorization"] = "Bearer " + key
+            if (parsed_endpoint.hostname or "").lower() == "openrouter.ai":
+                headers["HTTP-Referer"] = "https://hey-robo-brain.onrender.com"
+                headers["X-Title"] = "Robo Brain - SIT Campus Guide"
             request = Request(url, data=json.dumps(payload).encode("utf-8"), method="POST", headers=headers)
             try:
                 ssl_ctx = None

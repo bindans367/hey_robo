@@ -161,6 +161,8 @@ def safe_settings():
     for section in ("online", "local_llm"):
         settings[section]["api_key_set"] = bool(settings[section].get("api_key"))
         settings[section]["api_key"] = ""
+    settings["online"]["transcription_api_key_set"] = bool(settings["online"].get("transcription_api_key"))
+    settings["online"]["transcription_api_key"] = ""
     return settings
 
 class Handler(BaseHTTPRequestHandler):
@@ -442,6 +444,8 @@ class Handler(BaseHTTPRequestHandler):
                 for section in ("online", "local_llm"):
                     if isinstance(incoming.get(section), dict) and not incoming[section].get("api_key"):
                         incoming[section]["api_key"] = old[section].get("api_key", "")
+                if isinstance(incoming.get("online"), dict) and not incoming["online"].get("transcription_api_key"):
+                    incoming["online"]["transcription_api_key"] = old["online"].get("transcription_api_key", "")
                 settings = core.save_settings(incoming)
                 return self.send_json({"ok": True, "settings": safe_settings()})
             if path == "/api/knowledge/save":
@@ -569,6 +573,9 @@ class Handler(BaseHTTPRequestHandler):
                 if key:
                     headers["Authorization"] = "Bearer " + key
                 endpoint = urlparse(model_config["base_url"].rstrip("/"))
+                if (endpoint.hostname or "").lower() == "openrouter.ai":
+                    headers["HTTP-Referer"] = "https://hey-robo-brain.onrender.com"
+                    headers["X-Title"] = "Robo Brain - SIT Campus Guide"
                 is_ollama = test_mode == "local" and host.lower() in ("localhost", "127.0.0.1", "::1") and endpoint.port == 11434
                 test_payload = {"model": model_config["model"], "messages": [{"role": "user", "content": "Reply briefly: Robo Brain connection is working."}], "stream": False}
                 test_url = model_config["base_url"].rstrip("/") + "/chat/completions"

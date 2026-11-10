@@ -262,7 +262,7 @@ def _load_tts_settings():
             "speed": max(.65, min(1.4, float(voice.get("speed", 1.0)))),
             "pitch": max(-10, min(10, int(voice.get("pitch", 0)))),
             "volume": max(0, min(100, int(voice.get("volume", 100)))),
-            "api_key": str(online.get("api_key", "")).strip(),
+            "api_key": str(online.get("transcription_api_key") or os.environ.get("GEMINI_API_KEY") or online.get("api_key", "")).strip(),
             "tts_model": str(online.get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts",
         }
     except (OSError, ValueError, TypeError, json.JSONDecodeError):

@@ -94,9 +94,12 @@ function applySettings(settings) {
   const online = settings.online || {};
   $("#online-url").value = online.base_url || "https://generativelanguage.googleapis.com/v1beta/openai";
   $("#online-model").value = online.model || "gemini-3.8-flash";
-  $("#cloud-provider").value = /generativelanguage\.googleapis\.com/i.test(online.base_url || "") ? "gemini" : /integrate\.api\.nvidia\.com/i.test(online.base_url || "") ? "nvidia" : "custom";
+  const onlineUrl=online.base_url||"";
+  $("#cloud-provider").value = /generativelanguage\.googleapis\.com/i.test(onlineUrl) ? "gemini" : /openrouter\.ai/i.test(onlineUrl) ? (online.model==="openrouter/free"?"openrouter-free":"openrouter-nemotron") : /integrate\.api\.nvidia\.com/i.test(onlineUrl) ? "nvidia" : "custom";
   $("#online-key").value = "";
   $("#key-status").textContent = online.api_key_set ? "A key is saved on this device. Leave blank to keep it." : "No key saved yet.";
+  $("#transcription-key").value = "";
+  $("#transcription-key-status").textContent = online.transcription_api_key_set ? "A Gemini speech key is saved. Leave blank to keep it." : "No separate Gemini speech key saved. Gemini provider can reuse its answer key.";
   const local = settings.local_llm || {};
   $("#local-url").value = local.base_url || "http://127.0.0.1:11434/v1";
   $("#local-model").value = local.model || "qwen3:0.6b";
@@ -286,6 +289,7 @@ async function saveSettings(button) {
       base_url: $("#online-url").value.trim() || "https://generativelanguage.googleapis.com/v1beta/openai",
       model: $("#online-model").value.trim() || "gemini-3.8-flash",
       api_key: $("#online-key").value,
+      transcription_api_key: $("#transcription-key").value,
     },
     conversation: {
       welcome: $("#welcome-text").value,
@@ -360,6 +364,8 @@ document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListen
 $("#cloud-provider").addEventListener("change",()=>{
   const provider=$("#cloud-provider").value;
   if(provider==="gemini"){$("#online-url").value="https://generativelanguage.googleapis.com/v1beta/openai";$("#online-model").value="gemini-3.8-flash";}
+  else if(provider==="openrouter-nemotron"){$("#online-url").value="https://openrouter.ai/api/v1";$("#online-model").value="nvidia/nemotron-3.5-lightning:free";}
+  else if(provider==="openrouter-free"){$("#online-url").value="https://openrouter.ai/api/v1";$("#online-model").value="openrouter/free";}
   else if(provider==="nvidia"){$("#online-url").value="https://integrate.api.nvidia.com/v1";$("#online-model").value="nvidia/nemotron-3.5-lightning-30b-a3b";}
 });
 // Auto-switch to Cloud AI mode when user starts typing a key in the settings panel
