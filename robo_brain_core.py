@@ -152,6 +152,13 @@ def get_settings():
             for key in ("voice", "online", "local_llm", "conversation", "microphone"):
                 if isinstance(saved.get(key), dict):
                     merged[key].update(saved[key])
+        # A fresh hosted deployment has no local microphone or Whisper engine.
+        # Start its browser voice flow in Cloud AI mode so the hosted STT route
+        # does not reject the first question as Offline. Respect any explicit
+        # mode saved from the dashboard; desktop installs remain Offline-first.
+        is_public = os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes")
+        if is_public and not (isinstance(saved, dict) and saved.get("mode") in ("offline", "local", "online")):
+            merged["mode"] = "online"
         if os.environ.get("GEMINI_API_KEY"):
             merged["online"]["api_key"] = os.environ["GEMINI_API_KEY"]
         elif os.environ.get("ROBO_BRAIN_API_KEY"):
