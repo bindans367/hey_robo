@@ -61,6 +61,10 @@ def describe_provider_error(exc, api_key=""):
             detail = str(error.get("message", "")) if isinstance(error, dict) else str(error)
         except (OSError, ValueError, AttributeError):
             detail = ""
+        if not detail and exc.code == 503:
+            detail = "the provider is temporarily unavailable; retry shortly or switch to another provider"
+        elif not detail and exc.code == 429:
+            detail = "the provider rate limit was reached; wait briefly or check your plan limits"
         detail = f"HTTP {exc.code}" + (f": {detail}" if detail else "")
     else:
         detail = str(exc)

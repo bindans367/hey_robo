@@ -94,7 +94,7 @@ function applySettings(settings) {
   const online = settings.online || {};
   $("#online-url").value = online.base_url || "https://generativelanguage.googleapis.com/v1beta/openai";
   $("#online-model").value = online.model || "gemini-3.8-flash";
-  $("#cloud-provider").value = /generativelanguage\.googleapis\.com/i.test(online.base_url || "") ? "gemini" : "custom";
+  $("#cloud-provider").value = /generativelanguage\.googleapis\.com/i.test(online.base_url || "") ? "gemini" : /integrate\.api\.nvidia\.com/i.test(online.base_url || "") ? "nvidia" : "custom";
   $("#online-key").value = "";
   $("#key-status").textContent = online.api_key_set ? "A key is saved on this device. Leave blank to keep it." : "No key saved yet.";
   const local = settings.local_llm || {};
@@ -357,7 +357,11 @@ $("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const quer
 $("#tts-voice").addEventListener("change",updateRangeLabels);
 ["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
 document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
-$("#cloud-provider").addEventListener("change",()=>{if($("#cloud-provider").value==="gemini"){$("#online-url").value="https://generativelanguage.googleapis.com/v1beta/openai";$("#online-model").value="gemini-3.8-flash";}});
+$("#cloud-provider").addEventListener("change",()=>{
+  const provider=$("#cloud-provider").value;
+  if(provider==="gemini"){$("#online-url").value="https://generativelanguage.googleapis.com/v1beta/openai";$("#online-model").value="gemini-3.8-flash";}
+  else if(provider==="nvidia"){$("#online-url").value="https://integrate.api.nvidia.com/v1";$("#online-model").value="nvidia/nemotron-3.5-lightning-30b-a3b";}
+});
 // Auto-switch to Cloud AI mode when user starts typing a key in the settings panel
 $("#online-key").addEventListener("input", () => {
   if ($("#online-key").value.trim().length >= 10) {
@@ -404,20 +408,27 @@ $("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;se
           applySettings(data.settings);
         }
         const result = await api("/api/online/test", { mode: "online" });
-        toast(result.message || "✓ Gemini online connection is working!");
+        toast(result.message || "✓ Online model connection is working!");
       } catch (err) {
-        toast("Gemini test failed: " + err.message, true);
+        toast("Online model test failed: " + err.message, true);
       } finally {
         setBusy(btn, false);
       }
     });
   }
 
-  // Ask Test Gemini Bot Button in quick chat
+  // Exercise the selected online model with a general question. SIT questions
+  // can be served from verified local knowledge without contacting the LLM.
   const askTestBtn = $("#ask-test-gemini-btn");
   if (askTestBtn) {
-    askTestBtn.addEventListener("click", () => {
-      $("#ask-input").value = "Tell me about SIT Tumakuru campus and why it is special.";
+    askTestBtn.addEventListener("click", async () => {
+      const radio=document.querySelector('input[name="answer-mode"][value="online"]');
+      if(state.settings?.mode!=="online"){
+        radio.checked=true;
+        toggleOnlineFields();
+        if(!await saveSettings($("#save-settings")))return;
+      }
+      $("#ask-input").value = "Why does the sky look blue during the day?";
       $("#ask-form").dispatchEvent(new Event("submit"));
     });
   }
