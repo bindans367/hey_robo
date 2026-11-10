@@ -282,7 +282,8 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(audio_bytes)
             return
         if path == "/api/health":
-            return self.send_json({"status": "healthy", "service": "robo_brain", "version": "2.0.0"})
+            return self.send_json({"status": "healthy", "service": "robo_brain", "version": "2.0.0",
+                                   "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:12]})
         if path == "/api/tts":
             parsed = urlparse(self.path)
             params = parse_qs(parsed.query)

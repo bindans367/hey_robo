@@ -5,6 +5,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements-render.txt
     startCommand: python robo_brain.py
+    autoDeployTrigger: commit
     healthCheckPath: /api/health
     envVars:
       - key: ROBO_PUBLIC
