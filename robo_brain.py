@@ -347,9 +347,19 @@ class Handler(BaseHTTPRequestHandler):
                 filename = "audio.webm" if "webm" in content_type else "audio.wav"
                 settings = core.get_settings()
                 stt_provider = settings.get("microphone", {}).get("transcription_provider", "auto")
-                use_gemini = stt_provider == "gemini" or (stt_provider == "auto" and settings.get("mode") == "online")
+                public_deployment = os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes")
+                cloud_mode = settings.get("mode") == "online"
+                # A hosted Render instance has no access to the user's local
+                # Whisper installation. In Cloud AI mode, use Gemini even if
+                # an older setting still says "Whisper offline".
+                use_gemini = stt_provider == "gemini" or (cloud_mode and (stt_provider == "auto" or public_deployment))
                 transcript = ""
                 gemini_error = ""
+                if public_deployment and not use_gemini:
+                    return self.send_json({
+                        "error": "Hosted voice is currently set to Offline SIT mode. Select Cloud AI · Gemini and save settings before using the hosted microphone.",
+                        "reason": "cloud_mode_required",
+                    }, 503)
                 if use_gemini:
                     core.publish_runtime("TRANSCRIPT", detail="Transcribing with Gemini speech recognition…")
                     vocabulary = []
@@ -360,11 +370,19 @@ class Handler(BaseHTTPRequestHandler):
                         print("[STT] Transcription started with Gemini.", flush=True)
                         transcript = core.transcribe_with_gemini(audio_bytes, content_type, vocabulary)
                     except Exception as exc:
-                        gemini_error = str(exc)
-                        print(f"[ERROR] Gemini STT failed; falling back to local Faster-Whisper: {gemini_error}", file=sys.stderr, flush=True)
+                        gemini_error = core.describe_provider_error(
+                            exc, settings.get("online", {}).get("api_key", "")
+                        )
+                        print(f"[ERROR] Gemini STT failed: {gemini_error}", file=sys.stderr, flush=True)
+                if public_deployment and gemini_error:
+                    # Gemini's error detail is already sanitized by
+                    # transcribe_with_gemini; report it instead of masking
+                    # invalid keys, unavailable models, quota, and bad audio.
+                    return self.send_json({
+                        "error": f"Gemini voice transcription failed: {gemini_error}",
+                        "reason": "gemini_transcription_failed",
+                    }, 502)
                 if not use_gemini or gemini_error:
-                    if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
-                        return self.send_json({"error": "Cloud voice recognition needs Cloud AI mode and a valid Gemini API key. The local Whisper microphone engine runs only on your robot computer."}, 503)
                     print("[STT] Local transcription fallback selected.", flush=True)
                     import voice_engine
                     transcript = voice_engine.transcribe_bytes(audio_bytes, filename=filename)
