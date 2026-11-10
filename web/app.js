@@ -194,10 +194,12 @@ function renderRobotStatus(robot={running:false}) {
   $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
   $("#runtime-detail").textContent=running?(activity.detail||`Microphone assistant is running${robot.pid?` · process ${robot.pid}`:""}.`):"Start the microphone assistant to let students talk with Robo.";
   $("#robot-start").classList.toggle("hidden",running);$("#robot-stop").classList.toggle("hidden",!running);
-  $("#robot-start").disabled=state.cloudMode && state.settings?.mode !== "offline";
+  $("#robot-start").disabled=state.cloudMode && state.settings?.mode === "local";
   if(state.cloudMode) $("#robot-start").title=state.settings?.mode === "offline"
     ? "Use browser speech recognition; answers come from the offline SIT knowledge base."
-    : "Local microphone and Qwen controls run on your robot computer.";
+    : state.settings?.mode === "online"
+      ? "Use browser speech recognition; answers come from your selected online model."
+      : "Local Qwen controls run on your robot computer.";
   $("#robot-run-mode").classList.toggle("hidden",running);
   $("#robot-status-badge").innerHTML=`<i></i> ${running?"ROBOT LISTENING":"CONTROL PANEL READY"}`;
   $("#robot-status-badge").classList.toggle("live",running);
@@ -734,7 +736,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     await stopBrowserWakeWord();
     playWakeBeep();
     toast("Wake-word detected! Robo is listening.");
-    if (state.cloudMode && state.settings?.mode === "offline") {
+    if (state.cloudMode && ["offline", "online"].includes(state.settings?.mode)) {
       startHostedOfflineQuestion();
       return;
     }
@@ -754,7 +756,10 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       return;
     }
     setVoiceUI("LISTENING", "Robo is listening · Ask your question");
-    vuText.textContent = "Browser speech recognition active · Answers use only the offline SIT knowledge base.";
+    const onlineMode = state.settings?.mode === "online";
+    vuText.textContent = onlineMode
+      ? "Browser speech recognition active · The transcript goes to your selected online answer model."
+      : "Browser speech recognition active · Answers use only the offline SIT knowledge base.";
     let finished = false;
     const finish = async (transcript, error = "") => {
       if (finished) return;
@@ -789,19 +794,23 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       const permissionStream = await navigator.mediaDevices.getUserMedia({audio:true});
       permissionStream.getTracks().forEach(track => track.stop());
       recognition.start();
-      console.info("[STT] Hosted Offline mode listening through browser recognition; answer engine remains the local SIT matcher.");
+      console.info(`[STT] Hosted ${onlineMode ? "Online" : "Offline"} mode listening through browser recognition.`);
     } catch (error) {
       finish("", error.message || "microphone permission was denied");
     }
   }
 
   async function answerHostedOfflineQuestion(transcript) {
-    setVoiceUI("PROCESSING", "Robo is finding the SIT answer…");
+    const onlineMode = state.settings?.mode === "online";
+    setVoiceUI("PROCESSING", onlineMode ? "Robo is asking the online model…" : "Robo is finding the SIT answer…");
     userText.textContent = transcript;
     $("#live-transcript").textContent = transcript;
-    botText.textContent = "Checking the offline SIT knowledge base…";
-    $("#live-answer").textContent = "Checking the offline SIT knowledge base…";
-    vuText.textContent = "No Gemini or Ollama request · Searching curated SIT answers.";
+    const waitText = onlineMode ? "Sending your question to the selected online model…" : "Checking the offline SIT knowledge base…";
+    botText.textContent = waitText;
+    $("#live-answer").textContent = waitText;
+    vuText.textContent = onlineMode
+      ? "Only recognized text is sent to the selected answer model; Gemini transcription is bypassed."
+      : "No Gemini or Ollama request · Searching curated SIT answers.";
     try {
       const normalized = transcript.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
       const stopPhrases = state.settings?.conversation?.stop_phrases || ["robo stop", "robot stop", "exit", "quit", "terminate"];
@@ -813,7 +822,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       const result = payload?.result || {};
       const answer = stopCommand
         ? (state.settings?.conversation?.farewell || "Goodbye! I’ll stop listening now.")
-        : (result.answer || "I couldn’t find that in my SIT knowledge base.");
+        : (result.answer || (onlineMode ? "The online model did not return an answer." : "I couldn’t find that in my SIT knowledge base."));
       userText.textContent = transcript;
       botText.textContent = answer;
       $("#live-transcript").textContent = transcript;
@@ -823,8 +832,8 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       state.history.unshift({kind:"conversation", text:transcript, answer, title:result.title || "SIT Knowledge Base", source:"ghost_mode", time:new Date().toISOString()});
       renderHistory();
       console.info("[STT] Browser transcript:", transcript);
-      console.info("[OFFLINE] Answered from the SIT knowledge base.");
-      setVoiceUI("SPEAKING", "Robo is speaking the offline answer…");
+      console.info(onlineMode ? "[ONLINE] Answered through the selected text model." : "[OFFLINE] Answered from the SIT knowledge base.");
+      setVoiceUI("SPEAKING", onlineMode ? "Robo is speaking the online answer…" : "Robo is speaking the offline answer…");
       const spoke = await speakInBrowser(answer);
       if (!spoke) toast("The answer is ready, but browser speech output is unavailable.", true);
       if (stopCommand) {
@@ -836,7 +845,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       else setVoiceUI("IDLE", "Answer complete · Click the mic to ask another question");
     } catch (error) {
       botText.textContent = "Error: " + error.message;
-      toast("Offline answer failed: " + error.message, true);
+      toast((onlineMode ? "Online" : "Offline") + " answer failed: " + error.message, true);
       enterSleepMode();
     }
   }
@@ -1367,7 +1376,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
   window.addEventListener("robo-robot-stopped", () => { localWakeStarted = false; });
 
   window.addEventListener("robo-browser-voice-start", async (event) => {
-    if (state.cloudMode && state.settings?.mode !== "offline") {
+    if (state.cloudMode && state.settings?.mode === "local") {
       toast("Local microphone and Qwen control are available on the robot computer.", true);
       return;
     }
@@ -1389,7 +1398,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
         permissionStream.getTracks().forEach(track => track.stop());
         ghostToggle.checked = false;
         await stopBrowserWakeWord();
-        if (state.cloudMode && state.settings?.mode === "offline") {
+        if (state.cloudMode && ["offline", "online"].includes(state.settings?.mode)) {
           startHostedOfflineQuestion();
         } else {
           const ready = await setupAudio();

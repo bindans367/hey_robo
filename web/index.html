@@ -43,7 +43,7 @@
               <div>
                 <div class="eyebrow">TALK TO ROBO · WHISPER &amp; GEMINI</div>
                 <h2>Interactive Voice Assistant</h2>
-                <p>Allow microphone access in your browser. On the hosted demo, Chrome transcribes speech and Offline mode answers only from the SIT knowledge base. On your robot computer, Whisper/Vosk can transcribe locally; Cloud AI sends audio to Gemini.</p>
+                <p>Allow microphone access in your browser. On the hosted demo, Chrome transcribes speech; Offline mode answers from the SIT knowledge base, while Online mode sends only the transcript to your selected answer model. On your robot computer, Whisper/Vosk can transcribe locally; Gemini transcription is used only when selected for local Online voice.</p>
               </div>
               <div class="voice-header-actions">
                 <label class="ghost-toggle" title="Sleep silently until 'Hey Robo' is detected">
@@ -174,6 +174,6 @@
   </div>
   <div class="modal-backdrop hidden" id="entry-modal"><form class="entry-modal" id="entry-form"><button type="button" class="modal-close" id="modal-close">×</button><div class="eyebrow">KNOWLEDGE EDITOR</div><h2 id="modal-title">Add an answer</h2><p class="modal-lead">Give Robo the phrases to listen for and the answer to speak.</p><input type="hidden" id="entry-original-id"><label class="field-label" for="entry-title">TOPIC NAME</label><input class="text-input" id="entry-title" required maxlength="120" placeholder="For example: Current principal"><label class="field-label" for="entry-id">INTERNAL ID <span class="field-help">Letters and numbers</span></label><input class="text-input" id="entry-id" required maxlength="80" pattern="[a-zA-Z0-9_-]{2,80}" placeholder="current_principal"><label class="field-label" for="entry-category">CATEGORY</label><input class="text-input" id="entry-category" maxlength="60" placeholder="college leadership"><label class="field-label" for="entry-keywords">QUESTION PHRASES <span class="field-help">One phrase per line</span></label><textarea class="keywords-input" id="entry-keywords" required placeholder="who is the principal&#10;current principal of SIT"></textarea><label class="field-label" for="entry-answer">ROBO’S ANSWER</label><textarea class="answer-input" id="entry-answer" required maxlength="5000" placeholder="Write the accurate answer in friendly, spoken language…"></textarea><label class="speak-toggle correction-speak"><input type="checkbox" id="speak-after-save" checked><span class="toggle-track"></span> Speak this answer after saving</label><div class="modal-actions"><button type="button" class="secondary-button" id="cancel-entry">Cancel</button><button type="submit" class="primary-button">Save answer</button></div></form></div>
   <div class="toast" id="toast"></div>
-  <script src="/app.js?v=openrouter-nemotron-20261110"></script>
+  <script src="/app.js?v=online-browser-transcription-20261110"></script>
 </body>
 </html>
