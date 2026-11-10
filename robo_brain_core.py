@@ -161,6 +161,20 @@ def get_settings():
             for key in ("voice", "online", "local_llm", "conversation", "microphone"):
                 if isinstance(saved.get(key), dict):
                     merged[key].update(saved[key])
+        # Older dashboard saves can contain JSON nulls for optional provider
+        # fields. Normalize them before URL parsing or any string operations.
+        for section in ("online", "local_llm"):
+            defaults = DEFAULT_SETTINGS[section]
+            for field in ("base_url", "model", "api_key"):
+                value = merged[section].get(field)
+                if value is None or str(value).strip().lower() in ("none", "null"):
+                    value = defaults.get(field, "")
+                merged[section][field] = str(value).strip()
+        for field in ("transcription_api_key", "tts_model", "transcription_model"):
+            value = merged["online"].get(field)
+            if value is None or str(value).strip().lower() in ("none", "null"):
+                value = DEFAULT_SETTINGS["online"].get(field, "")
+            merged["online"][field] = str(value).strip()
         # A fresh hosted deployment has no local microphone or Whisper engine.
         # Start its browser voice flow in Cloud AI mode so the hosted STT route
         # does not reject the first question as Offline. Respect any explicit
@@ -232,10 +246,11 @@ def save_settings(new_settings):
     voice["pitch"] = max(-10, min(10, int(voice.get("pitch", 0))))
     voice["volume"] = max(0, min(100, int(voice.get("volume", 100))))
     for section in ("online", "local_llm"):
-        settings[section]["base_url"] = str(settings[section].get("base_url", "")).rstrip("/")
-        settings[section]["model"] = str(settings[section].get("model", "")).strip()
-        settings[section]["api_key"] = str(settings[section].get("api_key", "")).strip()
-    settings["online"]["transcription_api_key"] = str(settings["online"].get("transcription_api_key", "")).strip()
+        defaults = DEFAULT_SETTINGS[section]
+        settings[section]["base_url"] = str(settings[section].get("base_url") or defaults["base_url"]).strip().rstrip("/")
+        settings[section]["model"] = str(settings[section].get("model") or defaults["model"]).strip()
+        settings[section]["api_key"] = str(settings[section].get("api_key") or "").strip()
+    settings["online"]["transcription_api_key"] = str(settings["online"].get("transcription_api_key") or "").strip()
     settings["online"]["tts_model"] = str(settings["online"].get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts"
     settings["online"]["transcription_model"] = str(settings["online"].get("transcription_model", "gemini-3.5-transcribe")).strip() or "gemini-3.5-transcribe"
     conversation = settings["conversation"]
@@ -526,15 +541,27 @@ def answer_query(query, matcher, source="dashboard"):
                     data = json.loads(response.read().decode("utf-8"))
                 if mode == "online":
                     print("[GEMINI] Request sent with recognized text; no audio attached to the answer request.", flush=True)
-                answer = (data["message"]["content"] if is_ollama else data["choices"][0]["message"]["content"]).strip()
+                message = data.get("message", {}) if is_ollama else data.get("choices", [{}])[0].get("message", {})
+                raw_answer = message.get("content") if isinstance(message, dict) else None
+                if isinstance(raw_answer, list):
+                    answer = " ".join(
+                        str(part.get("text", "")) for part in raw_answer
+                        if isinstance(part, dict) and part.get("text")
+                    ).strip()
+                else:
+                    answer = str(raw_answer or "").strip()
+                if not answer and isinstance(message, dict) and message.get("refusal"):
+                    answer = str(message["refusal"]).strip()
+                if not answer:
+                    raise RuntimeError("The selected model returned an empty answer. Please try again or test another model.")
                 result = {"matched": True, "confidence": 100.0, "topic_id": "local_llm" if mode == "local" else "online_llm", "title": "Local Qwen" if mode == "local" else "Cloud language model",
                           "answer": answer, "suggestions": [], "normalized_query": query, "mode": mode}
-            except (HTTPError, URLError, TimeoutError, KeyError, IndexError, ValueError, OSError) as exc:
+            except (HTTPError, URLError, TimeoutError, KeyError, IndexError, ValueError, OSError, RuntimeError) as exc:
                 reason = describe_provider_error(exc, key)
                 print(f"[ERROR] {mode_name} answer request failed: {reason}", file=sys.stderr, flush=True)
                 result = {"matched": False, "confidence": 0.0, "topic_id": "llm_unavailable", "title": mode_name,
                           "answer": f"I can't reach the selected {mode_name} right now. Please check that it is running and configured, then try again. {reason}",
-                          "suggestions": [], "normalized_query": query, "mode": mode, "notice": f"Selected {mode_name} could not be reached."}
+                          "suggestions": [], "normalized_query": query, "mode": mode, "notice": f"Selected {mode_name} could not be reached: {reason}"}
     conversation = settings["conversation"]
     # Reviewed answers already use a conversational voice. Avoid stacking a
     # generic opener on top of phrases such as “Sure…” or “Here’s a quick look”.
