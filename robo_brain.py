@@ -308,7 +308,9 @@ class Handler(BaseHTTPRequestHandler):
                 audio_mime = "audio/wav" if audio_bytes[:4] == b"RIFF" else "audio/mpeg"
                 self.send_header("Content-Type", audio_mime)
                 self.send_header("Content-Length", str(len(audio_bytes)))
-                self.send_header("Cache-Control", "public, max-age=3600")
+                # The same speech text can be requested after a voice change;
+                # audio is settings-dependent, so never cache it by URL alone.
+                self.send_header("Cache-Control", "no-store")
                 self.end_headers()
                 self.wfile.write(audio_bytes)
                 return
@@ -412,6 +414,7 @@ class Handler(BaseHTTPRequestHandler):
                 # Check stop phrase
                 if any(norm_cmd == p or norm_cmd.startswith(p + " ") for p in conv.get("stop_phrases", [])):
                     farewell = conv.get("farewell", "Goodbye!")
+                    voice_provider = settings.get("voice", {}).get("provider", "edge")
                     core.publish_runtime("SPEAKING", transcript=transcript, answer=farewell, title="Robo Stopped", detail="Voice session stopped by user.")
                     return self.send_json({
                         "ok": True,
@@ -419,13 +422,14 @@ class Handler(BaseHTTPRequestHandler):
                         "is_stop": True,
                         "answer": farewell,
                         "title": "Goodbye",
-                        "audio_url": "" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") else f"/api/tts?text={quote(farewell)}"
+                        "audio_url": "" if voice_provider == "system" else f"/api/tts?text={quote(farewell)}"
                     })
                 
                 answer_started = time.perf_counter()
                 result = core.answer_query(transcript, matcher, source="voice_web")
                 print(f"[PIPELINE] Answer generation completed in {time.perf_counter() - answer_started:.2f}s.", flush=True)
                 ans_text = result.get("answer", "")
+                voice_provider = settings.get("voice", {}).get("provider", "edge")
                 core.publish_runtime("SPEAKING", transcript=transcript, answer=ans_text, title=result.get("title", ""), detail="Robo is speaking response.")
                 return self.send_json({
                     "ok": True,
@@ -433,7 +437,7 @@ class Handler(BaseHTTPRequestHandler):
                     "result": result,
                     "answer": ans_text,
                     "title": result.get("title", ""),
-                    "audio_url": "" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") else f"/api/tts?text={quote(ans_text)}",
+                    "audio_url": "" if voice_provider == "system" else f"/api/tts?text={quote(ans_text)}",
                     "fallback_notice": "Gemini transcription was unavailable; used local Faster-Whisper." if gemini_error else ""
                 })
 
@@ -487,18 +491,26 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"error": "Type a question first."}, 400)
                 result = core.answer_query(query, matcher, source="dashboard")
                 spoken = None
+                speech_mode = "server"
+                audio_url = ""
                 if data.get("speak", True):
                     core.publish_runtime("SPEAKING", transcript=query, answer=result["answer"], title=result.get("title", ""), detail="Robo is speaking the dashboard answer.")
                     if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
                         spoken = False
+                        voice_provider = core.get_settings().get("voice", {}).get("provider", "edge")
+                        if voice_provider == "system":
+                            speech_mode = "browser"
+                        else:
+                            speech_mode = "audio"
+                            audio_url = f"/api/tts?text={quote(result['answer'])}"
                     else:
                         try:
                             spoken = speak_and_wait(result["answer"])
                         finally:
                             phase = "READY" if locals().get("spoken", True) else "INTERRUPTED"
                             core.publish_runtime(phase, transcript=query, answer=result["answer"], title=result.get("title", ""), detail="Dashboard speech finished." if phase == "READY" else "Speech was interrupted by the operator.")
-                return self.send_json({"result": result, "spoken": spoken,
-                                       "speech_mode": "browser" if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes") and data.get("speak", True) else "server",
+                return self.send_json({"result": result, "spoken": spoken, "audio_url": audio_url,
+                                       "speech_mode": speech_mode,
                                        "voice_status": dict(last_tts_status)})
             if path == "/api/speak":
                 text = str(data.get("text", "")).strip()
@@ -507,9 +519,13 @@ class Handler(BaseHTTPRequestHandler):
                 if len(text) > 12000:
                     return self.send_json({"error": "Speech scripts are limited to 12,000 characters."}, 400)
                 if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
-                    core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is speaking a saved script in the browser.")
+                    voice_provider = core.get_settings().get("voice", {}).get("provider", "edge")
+                    if voice_provider == "system":
+                        core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is speaking a saved script in the browser.")
+                        return self.send_json({"ok": True, "spoken": False, "speech_mode": "browser"})
                     core.add_history("script", text, text, "script-to-speech", "Speech script")
-                    return self.send_json({"ok": True, "spoken": False, "speech_mode": "browser"})
+                    core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is preparing a saved script with the selected voice.")
+                    return self.send_json({"ok": True, "spoken": False, "speech_mode": "audio", "audio_url": f"/api/tts?text={quote(text)}"})
                 core.publish_runtime("SPEAKING", answer=text, title="Saved script", detail="Robo is speaking a saved script.")
                 try:
                     spoken = speak_and_wait(text)

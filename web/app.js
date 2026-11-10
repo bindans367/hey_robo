@@ -45,8 +45,10 @@ function speakInBrowser(text) {
   utterance.pitch = Math.max(.5, Math.min(2, 1 + (Number(voice.pitch) || 0) / 10));
   utterance.volume = Math.max(0, Math.min(1, Number.isFinite(Number(voice.volume)) ? Number(voice.volume) / 100 : 1));
   const gender = String(voice.gender || "").toLowerCase();
+  const selectedId = String(voice.voice_id || "").toLowerCase().replace(/neural$/i, "");
   const voices = window.speechSynthesis.getVoices();
-  utterance.voice = voices.find(item => /^en[-_]in$/i.test(item.lang) && (!gender || item.name.toLowerCase().includes(gender)))
+  utterance.voice = voices.find(item => selectedId && (item.name.toLowerCase().includes(selectedId) || item.voiceURI.toLowerCase().includes(selectedId)))
+    || voices.find(item => /^en[-_]in$/i.test(item.lang) && (!gender || item.name.toLowerCase().includes(gender)))
     || voices.find(item => /^en[-_]in$/i.test(item.lang)) || null;
   return new Promise(resolve => {
     utterance.onend = () => resolve(true);
@@ -54,8 +56,34 @@ function speakInBrowser(text) {
     try { window.speechSynthesis.speak(utterance); } catch { resolve(false); }
   });
 }
+function playVoiceUrl(url) {
+  const player = $("#voice-player");
+  if (!player || !url) return Promise.resolve(false);
+  player.pause();
+  player.onended = null;
+  player.onerror = null;
+  player.onplaying = null;
+  player.src = url;
+  const volume = Number(state.settings?.voice?.volume);
+  player.volume = Math.max(0, Math.min(1, Number.isFinite(volume) ? volume / 100 : 1));
+  return new Promise(resolve => {
+    const done = ok => {
+      player.removeEventListener("ended", onEnded);
+      player.removeEventListener("error", onError);
+      resolve(ok);
+    };
+    const onEnded = () => done(true);
+    const onError = () => done(false);
+    player.addEventListener("ended", onEnded, {once:true});
+    player.addEventListener("error", onError, {once:true});
+    Promise.resolve(player.play()).catch(() => done(false));
+  });
+}
 async function speakText(text) {
   const result = await api("/api/speak", {text});
+  if (result.audio_url && !await playVoiceUrl(result.audio_url)) {
+    throw new Error("The selected voice could not play. Check the voice provider and internet connection.");
+  }
   if (result.speech_mode === "browser" && !await speakInBrowser(text)) {
     throw new Error("This browser does not have speech output available.");
   }
@@ -182,6 +210,9 @@ function renderSavedScripts() {
   $("#delete-script").disabled=!select.value;
 }
 function abortSpeech() {
+  const player = $("#voice-player");
+  if (player) { player.pause(); player.currentTime = 0; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   return api("/api/robot/abort-speech",{}).then(()=>toast("Stop requested. Robo will stop speaking now."))
     .catch(error=>toast(error.message,true));
 }
@@ -359,7 +390,7 @@ $("#delete-script").addEventListener("click",async()=>{const id=$("#saved-script
 $("#speak-script").addEventListener("click",async e=>{const btn=e.currentTarget,text=$("#speech-text").value.trim();if(!text){toast("Paste or type the speech first.",true);return;}setBusy(btn,true,"Robo is speaking…");try{await speakText(text);toast("Robo finished speaking.");refreshHistory();}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#abort-speech").addEventListener("click",abortSpeech);$("#abort-script-speech").addEventListener("click",abortSpeech);
 $("#repeat-answer").addEventListener("click",async e=>{const text=$("#live-answer").textContent.trim();if(!text||text==="Robo’s latest response will appear here.")return;const btn=e.currentTarget;setBusy(btn,true,"Speaking…");try{await speakText(text);toast("Robo repeated the answer.");refreshHistory();}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
-$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const speak=$("#ask-speak").checked;const data=await api("/api/ask",{query,speak});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";if(speak&&data.speech_mode==="browser"&&!await speakInBrowser(r.answer))toast("Answer is ready, but this browser has no speech output.",true);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const speak=$("#ask-speak").checked;const data=await api("/api/ask",{query,speak});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";if(speak&&data.speech_mode==="audio"&&!await playVoiceUrl(data.audio_url))toast("The selected voice could not play. Check the voice provider and internet connection.",true);else if(speak&&data.speech_mode==="browser"&&!await speakInBrowser(r.answer))toast("Answer is ready, but this browser has no speech output.",true);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#tts-voice").addEventListener("change",updateRangeLabels);
 ["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
 document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
@@ -834,7 +865,10 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       console.info("[STT] Browser transcript:", transcript);
       console.info(onlineMode ? "[ONLINE] Answered through the selected text model." : "[OFFLINE] Answered from the SIT knowledge base.");
       setVoiceUI("SPEAKING", onlineMode ? "Robo is speaking the online answer…" : "Robo is speaking the offline answer…");
-      const spoke = await speakInBrowser(answer);
+      const selectedVoice = state.settings?.voice || {};
+      const spoke = selectedVoice.provider === "system"
+        ? await speakInBrowser(answer)
+        : await playAudio(`/api/tts?text=${encodeURIComponent(answer)}`, false);
       if (!spoke) toast("The answer is ready, but browser speech output is unavailable.", true);
       if (stopCommand) {
         ghostToggle.checked = false;
@@ -1197,7 +1231,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     }
   }
 
-  function playAudio(url) {
+  function playAudio(url, manageLifecycle = true) {
     return new Promise((resolve) => {
       let finished = false;
       let fallbackStarted = false;
@@ -1206,7 +1240,7 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
         if (finished) return;
         finished = true;
         console.info("[TTS] Playback completed.");
-        onAudioFinished();
+        if (manageLifecycle) onAudioFinished();
         resolve();
       };
       const browserSpeechFallback = () => {
@@ -1225,7 +1259,9 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
           utterance.volume = Math.max(0, Math.min(1, (Number(savedVoice.volume) || 100) / 100));
           const voices = window.speechSynthesis.getVoices();
           const gender = String(savedVoice.gender || "").toLowerCase();
-          utterance.voice = voices.find(voice => /^en[-_]in$/i.test(voice.lang) && (!gender || voice.name.toLowerCase().includes(gender)))
+          const selectedId = String(savedVoice.voice_id || "").toLowerCase().replace(/neural$/i, "");
+          utterance.voice = voices.find(voice => selectedId && (voice.name.toLowerCase().includes(selectedId) || voice.voiceURI.toLowerCase().includes(selectedId)))
+            || voices.find(voice => /^en[-_]in$/i.test(voice.lang) && (!gender || voice.name.toLowerCase().includes(gender)))
             || voices.find(voice => /^en[-_]in$/i.test(voice.lang))
             || null;
           utterance.onend = finish;
