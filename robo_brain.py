@@ -17,6 +17,7 @@ import uuid
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, quote, unquote
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from matcher import matcher
