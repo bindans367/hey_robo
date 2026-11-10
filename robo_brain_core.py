@@ -522,7 +522,13 @@ def answer_query(query, matcher, source="dashboard"):
                 payload = {"model": llm["model"], "think": False, "stream": False, "messages": conversation_messages, "options": {"temperature": 0.3}}
             else:
                 url = base_url + "/chat/completions"
-                payload = {"model": llm["model"], "messages": conversation_messages, "temperature": 0.3, "max_tokens": 100}
+                # Reasoning models can spend a 100-token budget on internal
+                # reasoning and return no visible answer. Give the short voice
+                # reply enough output space and disable hidden reasoning on
+                # OpenRouter, where this request parameter is supported.
+                payload = {"model": llm["model"], "messages": conversation_messages, "temperature": 0.3, "max_tokens": 256}
+                if (parsed_endpoint.hostname or "").lower() == "openrouter.ai":
+                    payload["reasoning"] = {"enabled": False}
             headers = {"Content-Type": "application/json"}
             if key:
                 headers["Authorization"] = "Bearer " + key
