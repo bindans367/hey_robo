@@ -191,15 +191,19 @@ function renderRobotStatus(robot={running:false}) {
   $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
   $("#runtime-detail").textContent=running?(activity.detail||`Microphone assistant is running${robot.pid?` · process ${robot.pid}`:""}.`):"Start the microphone assistant to let students talk with Robo.";
   $("#robot-start").classList.toggle("hidden",running);$("#robot-stop").classList.toggle("hidden",!running);
-  $("#robot-start").disabled=state.cloudMode;
-  if(state.cloudMode) $("#robot-start").title="Wake-word and microphone control run on your local robot computer.";
+  $("#robot-start").disabled=state.cloudMode && state.settings?.mode !== "offline";
+  if(state.cloudMode) $("#robot-start").title=state.settings?.mode === "offline"
+    ? "Use browser speech recognition; answers come from the offline SIT knowledge base."
+    : "Local microphone and Qwen controls run on your robot computer.";
   $("#robot-run-mode").classList.toggle("hidden",running);
   $("#robot-status-badge").innerHTML=`<i></i> ${running?"ROBOT LISTENING":"CONTROL PANEL READY"}`;
   $("#robot-status-badge").classList.toggle("live",running);
   $("#live-phase").classList.toggle("speaking",phase==="SPEAKING");
   $("#live-phase").innerHTML=`<i></i><span>${esc(labels[phase]||phase)}</span>`;
   $("#live-detail").textContent=state.cloudMode
-    ?"Cloud demo: text chat and browser speech work here. Wake word and robot microphone control run on the local robot computer."
+    ?(state.settings?.mode === "offline"
+      ?"Hosted Offline mode: Chrome handles speech recognition; answers come only from the SIT knowledge base."
+      :"Cloud demo: text chat and browser speech work here. Local microphone and Qwen controls run on the robot computer.")
     :(activity.detail||(running?"Robo is starting up.":"Start listening to see the current activity here."));
   if(activity.transcript){
     $("#live-transcript").textContent=activity.transcript;
@@ -556,9 +560,9 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       }, 400);
       return;
     }
-    if (state.cloudMode && state.settings.mode !== "online") {
-      setVoiceUI("IDLE", "Cloud demo microphone needs Cloud AI mode");
-      vuText.textContent = "Offline wake-word detection runs only on the local robot computer.";
+    if (state.cloudMode && state.settings.mode === "local") {
+      setVoiceUI("IDLE", "Local Qwen is available only on your robot computer");
+      vuText.textContent = "Choose Offline SIT answers or Cloud AI for the hosted demo.";
       return;
     }
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -713,10 +717,109 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     await stopBrowserWakeWord();
     playWakeBeep();
     toast("Wake-word detected! Robo is listening.");
+    if (state.cloudMode && state.settings?.mode === "offline") {
+      startHostedOfflineQuestion();
+      return;
+    }
     const ready = await setupAudio();
     if (ready) {
       startListening();
     } else {
+      enterSleepMode();
+    }
+  }
+
+  async function startHostedOfflineQuestion() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      toast("This browser cannot transcribe speech. Use Chrome or Edge, or type the question.", true);
+      enterSleepMode();
+      return;
+    }
+    setVoiceUI("LISTENING", "Robo is listening · Ask your question");
+    vuText.textContent = "Browser speech recognition active · Answers use only the offline SIT knowledge base.";
+    let finished = false;
+    const finish = async (transcript, error = "") => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(listenTimeoutTimer);
+      if (!transcript) {
+        if (error) toast("Speech recognition error: " + error, true);
+        else toast("I didn’t catch that. Please try again.", true);
+        enterSleepMode();
+        return;
+      }
+      await answerHostedOfflineQuestion(transcript);
+    };
+    const recognition = new SpeechRec();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.lang = "en-IN";
+    recognition.onresult = event => {
+      const transcript = Array.from(event.results || []).map(result => result[0]?.transcript || "").join(" ").trim();
+      finish(transcript);
+    };
+    recognition.onerror = event => finish("", event.error || "could not recognize speech");
+    recognition.onend = () => finish("");
+    listenTimeoutTimer = setTimeout(() => {
+      try { recognition.stop(); } catch {}
+      finish("", "listening timed out");
+    }, 20000);
+    try {
+      // Request microphone permission during this user-initiated wake, then
+      // let SpeechRecognition own the mic for the question itself.
+      const permissionStream = await navigator.mediaDevices.getUserMedia({audio:true});
+      permissionStream.getTracks().forEach(track => track.stop());
+      recognition.start();
+      console.info("[STT] Hosted Offline mode listening through browser recognition; answer engine remains the local SIT matcher.");
+    } catch (error) {
+      finish("", error.message || "microphone permission was denied");
+    }
+  }
+
+  async function answerHostedOfflineQuestion(transcript) {
+    setVoiceUI("PROCESSING", "Robo is finding the SIT answer…");
+    userText.textContent = transcript;
+    $("#live-transcript").textContent = transcript;
+    botText.textContent = "Checking the offline SIT knowledge base…";
+    $("#live-answer").textContent = "Checking the offline SIT knowledge base…";
+    vuText.textContent = "No Gemini or Ollama request · Searching curated SIT answers.";
+    try {
+      const normalized = transcript.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+      const stopPhrases = state.settings?.conversation?.stop_phrases || ["robo stop", "robot stop", "exit", "quit", "terminate"];
+      const stopCommand = stopPhrases.some(phrase => {
+        const normalizedPhrase = String(phrase).toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+        return normalized === normalizedPhrase || normalized.startsWith(normalizedPhrase + " ");
+      });
+      const payload = stopCommand ? null : await api("/api/ask", {query:transcript, speak:false});
+      const result = payload?.result || {};
+      const answer = stopCommand
+        ? (state.settings?.conversation?.farewell || "Goodbye! I’ll stop listening now.")
+        : (result.answer || "I couldn’t find that in my SIT knowledge base.");
+      userText.textContent = transcript;
+      botText.textContent = answer;
+      $("#live-transcript").textContent = transcript;
+      $("#live-answer").textContent = answer;
+      $("#live-title").textContent = stopCommand ? "Robo Stopped" : (result.title || "SIT Knowledge Base");
+      if (result.notice) vuText.textContent = result.notice;
+      state.history.unshift({kind:"conversation", text:transcript, answer, title:result.title || "SIT Knowledge Base", source:"ghost_mode", time:new Date().toISOString()});
+      renderHistory();
+      console.info("[STT] Browser transcript:", transcript);
+      console.info("[OFFLINE] Answered from the SIT knowledge base.");
+      setVoiceUI("SPEAKING", "Robo is speaking the offline answer…");
+      const spoke = await speakInBrowser(answer);
+      if (!spoke) toast("The answer is ready, but browser speech output is unavailable.", true);
+      if (stopCommand) {
+        ghostToggle.checked = false;
+        continuousToggle.checked = false;
+        setVoiceUI("IDLE", "Robo stopped · Click Start listening to resume");
+      } else if (ghostToggle.checked) enterSleepMode();
+      else if (continuousToggle.checked) setTimeout(startHostedOfflineQuestion, 500);
+      else setVoiceUI("IDLE", "Answer complete · Click the mic to ask another question");
+    } catch (error) {
+      botText.textContent = "Error: " + error.message;
+      toast("Offline answer failed: " + error.message, true);
       enterSleepMode();
     }
   }
@@ -1202,13 +1305,13 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     if (!ghostToggle.checked) return;
     if (state.cloudMode) {
       await stopLocalWakeWorker();
-      if (event.detail?.mode === "online") {
+      if (["online", "offline"].includes(event.detail?.mode)) {
         startBrowserWakeWord();
       } else {
         await stopBrowserWakeWord();
         wakeLock = false;
-        setVoiceUI("IDLE", "Cloud demo: select Cloud AI for browser microphone input");
-        vuText.textContent = "Offline wake-word detection runs only on the local robot computer.";
+        setVoiceUI("IDLE", "Local Qwen requires the robot computer");
+        vuText.textContent = "Choose Offline SIT answers or Cloud AI for the hosted demo.";
       }
       return;
     }
@@ -1247,8 +1350,8 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
   window.addEventListener("robo-robot-stopped", () => { localWakeStarted = false; });
 
   window.addEventListener("robo-browser-voice-start", async (event) => {
-    if (state.cloudMode) {
-      toast("Browser microphone control is available on the local Robo Brain page.", true);
+    if (state.cloudMode && state.settings?.mode !== "offline") {
+      toast("Local microphone and Qwen control are available on the robot computer.", true);
       return;
     }
     const mode = event.detail?.mode || "ghost";
@@ -1269,8 +1372,12 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
         permissionStream.getTracks().forEach(track => track.stop());
         ghostToggle.checked = false;
         await stopBrowserWakeWord();
-        const ready = await setupAudio();
-        if (ready) startListening();
+        if (state.cloudMode && state.settings?.mode === "offline") {
+          startHostedOfflineQuestion();
+        } else {
+          const ready = await setupAudio();
+          if (ready) startListening();
+        }
       }
       renderRobotStatus({running:false});
     } catch (error) {
