@@ -543,7 +543,25 @@ def answer_query(query, matcher, source="dashboard"):
                     ssl_ctx = ssl.create_default_context(cafile=certifi.where())
                 except Exception:
                     pass
-                with urlopen(request, timeout=60 if mode == "local" else 30, context=ssl_ctx) as response:
+                fallback_used = False
+                try:
+                    response_context = urlopen(request, timeout=60 if mode == "local" else 30, context=ssl_ctx)
+                except HTTPError as exc:
+                    # A free model may be online generally while its only
+                    # upstream provider is temporarily returning 503. Retry
+                    # once through OpenRouter's free-model router, which can
+                    # select another currently available free model.
+                    if (mode == "online" and (parsed_endpoint.hostname or "").lower() == "openrouter.ai"
+                            and exc.code == 503 and llm["model"] != "openrouter/free"):
+                        fallback_payload = dict(payload)
+                        fallback_payload["model"] = "openrouter/free"
+                        fallback_request = Request(url, data=json.dumps(fallback_payload).encode("utf-8"), method="POST", headers=headers)
+                        response_context = urlopen(fallback_request, timeout=30, context=ssl_ctx)
+                        fallback_used = True
+                        print("[AI] Selected OpenRouter model returned HTTP 503; retried once with OpenRouter free-model routing.", flush=True)
+                    else:
+                        raise
+                with response_context as response:
                     data = json.loads(response.read().decode("utf-8"))
                 if mode == "online":
                     print("[GEMINI] Request sent with recognized text; no audio attached to the answer request.", flush=True)
@@ -562,6 +580,8 @@ def answer_query(query, matcher, source="dashboard"):
                     raise RuntimeError("The selected model returned an empty answer. Please try again or test another model.")
                 result = {"matched": True, "confidence": 100.0, "topic_id": "local_llm" if mode == "local" else "online_llm", "title": "Local Qwen" if mode == "local" else "Cloud language model",
                           "answer": answer, "suggestions": [], "normalized_query": query, "mode": mode}
+                if fallback_used:
+                    result["notice"] = "The selected online model was temporarily unavailable; answered using OpenRouter's free-model fallback."
             except (HTTPError, URLError, TimeoutError, KeyError, IndexError, ValueError, OSError, RuntimeError) as exc:
                 reason = describe_provider_error(exc, key)
                 print(f"[ERROR] {mode_name} answer request failed: {reason}", file=sys.stderr, flush=True)
