@@ -1,4 +1,4 @@
-const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null, backendOnline: false, cloudMode: false };
+const state = { knowledge: [], history: [], categories: [], scripts: [], activeScriptId: "", settings: null, backendOnline: false, cloudMode: false, browserVoiceActive: false, browserVoicePhase: "STOPPED" };
 const $ = (selector) => document.querySelector(selector);
 const esc = (value = "") => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const pretty = value => String(value || "general").replace(/[_-]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -183,8 +183,9 @@ function abortSpeech() {
     .catch(error=>toast(error.message,true));
 }
 function renderRobotStatus(robot={running:false}) {
-  const running=Boolean(robot.running);
-  const activity=robot.activity||{}, phase=running?(activity.phase||"STARTING"):"STOPPED";
+  const running=Boolean(robot.running||state.browserVoiceActive);
+  const activity=robot.running?(robot.activity||{}):{};
+  const phase=robot.running?(activity.phase||"STARTING"):(state.browserVoiceActive?(state.browserVoicePhase||"SLEEP"):"STOPPED");
   const labels={STARTING:"STARTING",SLEEP:"GHOST SLEEPING",GREETING:"GREETING",LISTENING:"LISTENING",TRANSCRIPT:"HEARD YOU",THINKING:"THINKING",SPEAKING:"SPEAKING",INTERRUPTING:"STOPPING SPEECH",INTERRUPTED:"SPEECH STOPPED",READY:"READY",STOPPED:"STOPPED"};
   $("#runtime-indicator").classList.toggle("running",running);
   $("#runtime-title").textContent=running?`Robo is ${String(phase).toLowerCase()}`:"Robot conversation is stopped";
@@ -369,8 +370,8 @@ $("#test-voice").addEventListener("click",async e=>{const btn=e.currentTarget;se
 $("#test-online").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="online"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"online"});toast(result.message||"Cloud connection is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#test-local").addEventListener("click",async e=>{document.querySelector('input[name="answer-mode"][value="local"]').checked=true;toggleOnlineFields();if(!await saveSettings($("#save-settings")))return;const btn=e.currentTarget;setBusy(btn,true,"Connecting…");try{const result=await api("/api/online/test",{mode:"local"});toast(result.message||"Local model is working.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#clear-history").addEventListener("click",async()=>{if(!confirm("Clear all saved conversation and speech history?"))return;try{await api("/api/history/clear",{});state.history=[];renderHistory();toast("History cleared.");}catch(e){toast(e.message,true);}});
-$("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Starting…");try{const r=await api("/api/robot/start",{mode:$("#robot-run-mode").value});renderRobotStatus(r.robot);toast("Robo’s microphone assistant has started.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
-$("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{const r=await api("/api/robot/stop",{});renderRobotStatus(r.robot);window.dispatchEvent(new CustomEvent("robo-robot-stopped"));toast("Robot conversation stopped.");}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#robot-start").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Starting…");try{window.dispatchEvent(new CustomEvent("robo-browser-voice-start",{detail:{mode:$("#robot-run-mode").value}}));toast("Robo’s browser microphone assistant is starting.");}finally{setBusy(btn,false);}});
+$("#robot-stop").addEventListener("click",async e=>{const btn=e.currentTarget;setBusy(btn,true,"Stopping…");try{window.dispatchEvent(new CustomEvent("robo-browser-voice-stop"));toast("Robot conversation stopped.");}finally{setBusy(btn,false);}});
 
   // Mode badge click toggles between online and offline
   $("#mode-badge").addEventListener("click", async () => {
@@ -519,33 +520,36 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     }
   }
 
-  function setVoiceUI(state, textMsg) {
-    voiceState = state;
-    badge.className = `voice-badge ${state.toLowerCase()}`;
-    const badgeText = state === "SLEEP" ? "👻 GHOST SLEEP" :
-                      state === "LISTENING" ? "👂 LISTENING" :
-                      state === "PROCESSING" ? "🧠 THINKING" :
-                      state === "SPEAKING" ? "🗣 SPEAKING" : "⏸ IDLE";
+  function setVoiceUI(voiceStatus, textMsg) {
+    voiceState = voiceStatus;
+    state.browserVoicePhase = voiceStatus;
+    state.browserVoiceActive = voiceStatus !== "IDLE";
+    badge.className = `voice-badge ${voiceStatus.toLowerCase()}`;
+    const badgeText = voiceStatus === "SLEEP" ? "👻 GHOST SLEEP" :
+                      voiceStatus === "LISTENING" ? "👂 LISTENING" :
+                      voiceStatus === "PROCESSING" ? "🧠 THINKING" :
+                      voiceStatus === "SPEAKING" ? "🗣 SPEAKING" : "⏸ IDLE";
     badge.querySelector("span").textContent = badgeText;
-    micHero.className = `voice-mic-hero ${state.toLowerCase()}`;
+    micHero.className = `voice-mic-hero ${voiceStatus.toLowerCase()}`;
     if (textMsg) label.textContent = textMsg;
 
-    interruptBtn.classList.toggle("hidden", state !== "SPEAKING");
-    wave.classList.toggle("hidden", state !== "SPEAKING");
+    interruptBtn.classList.toggle("hidden", voiceStatus !== "SPEAKING");
+    wave.classList.toggle("hidden", voiceStatus !== "SPEAKING");
 
-    if (state === "SLEEP") {
+    if (voiceStatus === "SLEEP") {
       vuFill.style.width = "0%";
       vuText.textContent = "Ghost Mode enabled · Starting browser wake listener…";
-    } else if (state === "IDLE") {
+    } else if (voiceStatus === "IDLE") {
       vuFill.style.width = "0%";
       vuText.textContent = "Mic ready · Click hero mic to talk";
     }
+    if (!localWakeStarted) renderRobotStatus({running:false});
   }
 
   function startBrowserWakeWord() {
-    // Browser SpeechRecognition depends on the browser's speech service and
-    // is not a reliable offline wake detector. Use local Vosk through bot.py
-    // whenever Robo Brain is in Offline or Local Qwen mode.
+    // Use the browser-owned microphone for every mode so Chrome can request
+    // permission. Captured questions are still transcribed by the local
+    // Whisper/Vosk engine in Offline and Local Qwen modes.
     if (!state.settings) {
       setTimeout(() => {
         if (ghostToggle.checked && voiceState === "SLEEP") startBrowserWakeWord();
@@ -555,10 +559,6 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
     if (state.cloudMode && state.settings.mode !== "online") {
       setVoiceUI("IDLE", "Cloud demo microphone needs Cloud AI mode");
       vuText.textContent = "Offline wake-word detection runs only on the local robot computer.";
-      return;
-    }
-    if (state.settings.mode !== "online") {
-      startLocalWakeWorker();
       return;
     }
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -581,7 +581,12 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       console.info("[WAKE] Browser wake listener started; waiting for Hey Robo.");
       if (ghostToggle.checked && voiceState === "SLEEP") {
         setVoiceUI("SLEEP", "Waiting for ‘Hey Robo’…");
-        vuText.textContent = "Wake-word listener active · Say ‘Hey Robo’";
+        const mode = state.settings?.mode;
+        vuText.textContent = mode === "offline"
+          ? "Browser mic ready · Offline SIT answers · Say ‘Hey Robo’"
+          : mode === "local"
+            ? "Browser mic ready · Local Qwen answers · Say ‘Hey Robo’"
+            : "Wake-word listener active · Say ‘Hey Robo’";
       }
     };
 
@@ -1160,8 +1165,12 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
 
   // Event Listeners
   micHero.addEventListener("click", async () => {
-    if (state.settings?.mode !== "online" && ghostToggle.checked) {
-      toast("Offline Ghost Mode is listening through the local Vosk robot. Say ‘Hey Robo’ to wake it.");
+    if (state.settings?.mode !== "online" && ghostToggle.checked && voiceState === "SLEEP") {
+      // A click is the reliable user gesture for the browser permission prompt
+      // and is also a manual wake fallback if browser wake recognition is unavailable.
+      wakeLock = true;
+      lastWakeTime = Date.now();
+      await triggerWakeUp();
       return;
     }
     if (voiceState === "SPEAKING") {
@@ -1203,17 +1212,14 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       }
       return;
     }
-    if (event.detail?.mode === "online") {
-      await stopLocalWakeWorker();
-      if (voiceState === "SLEEP") startBrowserWakeWord();
-    } else {
-      await stopBrowserWakeWord();
-      startLocalWakeWorker();
-    }
+    await stopLocalWakeWorker();
+    if (voiceState === "SLEEP") startBrowserWakeWord();
   });
 
   window.addEventListener("robo-runtime-update", (event) => {
-    if (state.settings?.mode === "online") return;
+    // Runtime events describe the separate Python microphone worker. It is no
+    // longer used by the dashboard voice flow, which owns its mic in Chrome.
+    if (state.settings?.mode === "online" || !localWakeStarted) return;
     const {running, activity = {}, phase = "STOPPED"} = event.detail || {};
     if (!running) {
       setVoiceUI("IDLE", "Offline robot stopped · Start listening on Overview");
@@ -1239,6 +1245,67 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
   });
 
   window.addEventListener("robo-robot-stopped", () => { localWakeStarted = false; });
+
+  window.addEventListener("robo-browser-voice-start", async (event) => {
+    if (state.cloudMode) {
+      toast("Browser microphone control is available on the local Robo Brain page.", true);
+      return;
+    }
+    const mode = event.detail?.mode || "ghost";
+    try {
+      if (mode === "ghost") {
+        // Request permission from a direct button click, then release this
+        // temporary stream before the wake listener takes over the microphone.
+        const permissionStream = await navigator.mediaDevices.getUserMedia({audio: true});
+        permissionStream.getTracks().forEach(track => track.stop());
+        // Shut down a Vosk/Python listener left over from an earlier session;
+        // otherwise it can contend with Chrome for the same microphone.
+        localWakeStarted = false;
+        try { await api("/api/robot/stop", {}); } catch {}
+        ghostToggle.checked = true;
+        enterSleepMode();
+      } else {
+        const permissionStream = await navigator.mediaDevices.getUserMedia({audio: true});
+        permissionStream.getTracks().forEach(track => track.stop());
+        ghostToggle.checked = false;
+        await stopBrowserWakeWord();
+        const ready = await setupAudio();
+        if (ready) startListening();
+      }
+      renderRobotStatus({running:false});
+    } catch (error) {
+      setVoiceUI("IDLE", "Microphone permission is needed to start Robo");
+      vuText.textContent = "Allow microphone access for this site in Chrome, then press Start listening again.";
+      toast("Could not access the microphone: " + error.message, true);
+    }
+  });
+
+  window.addEventListener("robo-browser-voice-stop", async () => {
+    ghostToggle.checked = false;
+    continuousToggle.checked = false;
+    wakeLock = false;
+    clearTimeout(listenTimeoutTimer);
+    await stopBrowserWakeWord();
+    await stopLocalWakeWorker();
+    try { await api("/api/robot/stop", {}); } catch {}
+    if (mediaRecorder?.state === "recording") {
+      discardRecording = true;
+      recordedChunks = [];
+      try { mediaRecorder.stop(); } catch {}
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+    }
+    if (audioCtx) {
+      const oldContext = audioCtx;
+      audioCtx = null;
+      analyser = null;
+      oldContext.close().catch(() => {});
+    }
+    setVoiceUI("IDLE", "Conversation stopped · Click Start listening to resume");
+    renderRobotStatus({running:false});
+  });
 
   ghostToggle.addEventListener("change", () => {
     if (ghostToggle.checked) {

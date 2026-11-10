@@ -15,3 +15,29 @@ data/*.lock
 data/robot_runtime.log
 data/*.tmp
 data/robo_settings.json
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local AI models and downloaded weights
+/models/
+*.gguf
+*.onnx
+*.safetensors
+*.pt
+*.pth
+*.bin
+
+# Logs and generated files
+*.log
+logs/
+.pytest_cache/
+.mypy_cache/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/

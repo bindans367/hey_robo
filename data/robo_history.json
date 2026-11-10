@@ -2230,5 +2230,32 @@
     "answer": "CORSIT is the official robotics club of SIT Tumakuru where students build amazing bots. I cannot browse live real-time updates for their newest projects right now.",
     "source": "voice_web",
     "title": "Cloud language model"
+  },
+  {
+    "id": "1794065529546350100",
+    "time": "2026-11-07T21:02:09+05:30",
+    "kind": "conversation",
+    "text": "Tell me about EC department.",
+    "answer": "The electronics and communication department covers advanced electronics, communication systems, and connected devices. You can find the current curriculum and lab facilities on the official departmental page.",
+    "source": "voice_web",
+    "title": "Cloud language model"
+  },
+  {
+    "id": "1794065606495151600",
+    "time": "2026-11-07T21:03:26+05:30",
+    "kind": "conversation",
+    "text": "Tell me about placements of SIT.",
+    "answer": "Our dedicated training and placement department helps students secure top company roles through rigorous mentoring and recruitment drives. Specific placement statistics vary by year, so you can check our official website for the latest batch data.",
+    "source": "voice_web",
+    "title": "Cloud language model"
+  },
+  {
+    "id": "1794065657086011300",
+    "time": "2026-11-07T21:04:17+05:30",
+    "kind": "conversation",
+    "text": "Stop. Robot stop.",
+    "answer": "Pausing right now. Let me know whenever you need my help again.",
+    "source": "voice_web",
+    "title": "Cloud language model"
   }
 ]
