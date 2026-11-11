@@ -1,2 +1,4 @@
 numpy>=1.26,<3
 rapidfuzz>=3.9,<4
+certifi>=2024.2.2
+edge-tts>=7.0.0,<8

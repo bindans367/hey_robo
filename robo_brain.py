@@ -296,9 +296,12 @@ class Handler(BaseHTTPRequestHandler):
             if len(text_to_speak) > 12000:
                 return self.send_json({"error": "Speech text is limited to 12,000 characters."}, 400)
             try:
-                import voice_engine
+                if os.environ.get("ROBO_PUBLIC", "").strip().lower() in ("1", "true", "yes"):
+                    import hosted_tts as tts_engine
+                else:
+                    import voice_engine as tts_engine
                 tts_started = time.perf_counter()
-                audio_bytes = voice_engine.synthesize_to_bytes(text_to_speak)
+                audio_bytes = tts_engine.synthesize_to_bytes(text_to_speak)
                 print(f"[PIPELINE] TTS generation completed in {time.perf_counter() - tts_started:.2f}s.", flush=True)
                 if not audio_bytes:
                     return self.send_json({"error": "TTS synthesis returned no audio"}, 500)
