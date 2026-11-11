@@ -81,11 +81,10 @@ function playVoiceUrl(url) {
 }
 async function speakText(text) {
   const result = await api("/api/speak", {text});
-  if (result.audio_url && !await playVoiceUrl(result.audio_url)) {
-    throw new Error("The selected voice could not play. Check the voice provider and internet connection.");
-  }
-  if (result.speech_mode === "browser" && !await speakInBrowser(text)) {
-    throw new Error("This browser does not have speech output available.");
+  const browserSpoke = result.speech_mode === "browser" && await speakInBrowser(text);
+  const audioUrl = result.audio_url || (result.speech_mode === "browser" && !browserSpoke ? `/api/tts?text=${encodeURIComponent(text)}` : "");
+  if (audioUrl && !await playVoiceUrl(audioUrl) && !await speakInBrowser(text)) {
+    throw new Error("Speech playback is unavailable. Check this device’s audio output and try again.");
   }
   return result;
 }
@@ -390,7 +389,7 @@ $("#delete-script").addEventListener("click",async()=>{const id=$("#saved-script
 $("#speak-script").addEventListener("click",async e=>{const btn=e.currentTarget,text=$("#speech-text").value.trim();if(!text){toast("Paste or type the speech first.",true);return;}setBusy(btn,true,"Robo is speaking…");try{await speakText(text);toast("Robo finished speaking.");refreshHistory();}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#abort-speech").addEventListener("click",abortSpeech);$("#abort-script-speech").addEventListener("click",abortSpeech);
 $("#repeat-answer").addEventListener("click",async e=>{const text=$("#live-answer").textContent.trim();if(!text||text==="Robo’s latest response will appear here.")return;const btn=e.currentTarget;setBusy(btn,true,"Speaking…");try{await speakText(text);toast("Robo repeated the answer.");refreshHistory();}catch(error){toast(error.message,true);}finally{setBusy(btn,false);}});
-$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const speak=$("#ask-speak").checked;const data=await api("/api/ask",{query,speak});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";if(speak&&data.speech_mode==="audio"&&!await playVoiceUrl(data.audio_url))toast("The selected voice could not play. Check the voice provider and internet connection.",true);else if(speak&&data.speech_mode==="browser"&&!await speakInBrowser(r.answer))toast("Answer is ready, but this browser has no speech output.",true);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
+$("#ask-form").addEventListener("submit",async e=>{e.preventDefault();const query=$("#ask-input").value.trim();if(!query)return;const btn=$("#ask-button");setBusy(btn,true,"Thinking…");$("#ask-result").classList.add("hidden");try{const speak=$("#ask-speak").checked;const data=await api("/api/ask",{query,speak});const r=data.result;$("#ask-result").innerHTML=`<div class="ask-answer-head"><span>ROBO’S ANSWER</span><span>${esc(pretty(r.mode||"offline"))} · ${esc(r.title||"")}</span></div><p>${esc(r.answer)}</p>${r.notice?`<small>${esc(r.notice)}</small>`:""}${r.source?`<a href="${esc(r.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:""}`;$("#ask-result").classList.remove("hidden");state.history.unshift({kind:"conversation",text:query,answer:r.answer,title:r.title,source:"dashboard",time:new Date().toISOString()});renderHistory();$("#ask-input").value="";if(speak&&data.speech_mode==="audio"&&!await playVoiceUrl(data.audio_url)&&!await speakInBrowser(r.answer))toast("Speech playback is unavailable on this device.",true);else if(speak&&data.speech_mode==="browser"&&!await speakInBrowser(r.answer)&&!await playVoiceUrl(`/api/tts?text=${encodeURIComponent(r.answer)}`))toast("Speech playback is unavailable on this device.",true);}catch(err){toast(err.message,true);}finally{setBusy(btn,false);}});
 $("#tts-voice").addEventListener("change",updateRangeLabels);
 ["#speed-range","#pitch-range","#volume-range"].forEach(q=>$(q).addEventListener("input",updateRangeLabels));
 document.querySelectorAll("input[name=answer-mode]").forEach(r=>r.addEventListener("change",toggleOnlineFields));
@@ -866,10 +865,9 @@ setInterval(()=>{if(state.backendOnline&&($("#page-history").classList.contains(
       console.info(onlineMode ? "[ONLINE] Answered through the selected text model." : "[OFFLINE] Answered from the SIT knowledge base.");
       setVoiceUI("SPEAKING", onlineMode ? "Robo is speaking the online answer…" : "Robo is speaking the offline answer…");
       const selectedVoice = state.settings?.voice || {};
-      const spoke = selectedVoice.provider === "system"
-        ? await speakInBrowser(answer)
-        : await playAudio(`/api/tts?text=${encodeURIComponent(answer)}`, false);
-      if (!spoke) toast("The answer is ready, but browser speech output is unavailable.", true);
+      let spoke = selectedVoice.provider === "system" ? await speakInBrowser(answer) : false;
+      if (!spoke) spoke = await playAudio(`/api/tts?text=${encodeURIComponent(answer)}`, false);
+      if (!spoke) toast("The answer is ready, but speech playback is unavailable on this device.", true);
       if (stopCommand) {
         ghostToggle.checked = false;
         continuousToggle.checked = false;
