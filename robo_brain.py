@@ -593,16 +593,15 @@ class Handler(BaseHTTPRequestHandler):
                     headers["HTTP-Referer"] = "https://hey-robo-brain.onrender.com"
                     headers["X-Title"] = "Robo Brain - SIT Campus Guide"
                 is_ollama = test_mode == "local" and host.lower() in ("localhost", "127.0.0.1", "::1") and endpoint.port == 11434
-                test_payload = {"model": model_config["model"], "messages": [{"role": "user", "content": "Reply briefly: Robo Brain connection is working."}], "stream": False}
+                test_payload = {"model": model_config["model"], "messages": [{"role": "user", "content": "Reply briefly: Robo Brain connection is working."}], "stream": False, "temperature": 0.3}
                 test_url = model_config["base_url"].rstrip("/") + "/chat/completions"
                 if is_ollama:
                     test_url = f"{endpoint.scheme}://{endpoint.netloc}/api/chat"
                     test_payload.update({"think": False, "options": {"temperature": 0.2}})
                 else:
-                    test_payload["max_tokens"] = 80
-                req = Request(test_url,
-                    data=json.dumps(test_payload).encode(),
-                    method="POST", headers=headers)
+                    test_payload["max_tokens"] = 256
+                    if (endpoint.hostname or "").lower() == "openrouter.ai":
+                        test_payload["reasoning"] = {"enabled": False}
                 ssl_ctx = None
                 try:
                     import certifi, ssl
@@ -610,18 +609,36 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
                 try:
-                    with urlopen(req, timeout=20, context=ssl_ctx) as response:
+                    req = Request(test_url, data=json.dumps(test_payload).encode(), method="POST", headers=headers)
+                    fallback_used = False
+                    try:
+                        response_context = urlopen(req, timeout=30, context=ssl_ctx)
+                    except HTTPError as exc:
+                        if ((endpoint.hostname or "").lower() == "openrouter.ai" and exc.code == 503
+                                and model_config["model"] != "openrouter/free"):
+                            test_payload["model"] = "openrouter/free"
+                            fallback_req = Request(test_url, data=json.dumps(test_payload).encode(), method="POST", headers=headers)
+                            response_context = urlopen(fallback_req, timeout=30, context=ssl_ctx)
+                            fallback_used = True
+                        else:
+                            raise
+                    with response_context as response:
                         result = json.loads(response.read().decode("utf-8"))
                 except HTTPError as exc:
                     return self.send_json({"error": core.describe_provider_error(exc, key)}, 502)
                 label = "Local model" if test_mode == "local" else "Cloud model"
+                used_model = test_payload["model"]
                 if is_ollama:
                     reply = result.get("message", {}).get("content", "")
                 else:
                     reply = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if isinstance(reply, list):
+                    reply = " ".join(str(part.get("text", "")) for part in reply if isinstance(part, dict) and part.get("text"))
+                reply = str(reply or "").strip()
                 if not reply:
-                    reply = "Connected successfully." 
-                return self.send_json({"ok": True, "message": f"{label} connection is working: " + reply.strip()})
+                    return self.send_json({"error": "The provider accepted the request but returned an empty answer. Try another model or test again."}, 502)
+                suffix = f" using fallback model {used_model}" if fallback_used else f" ({used_model})"
+                return self.send_json({"ok": True, "message": f"{label} connection is working{suffix}: {reply}"})
             return self.send_json({"error": "Not found"}, 404)
         except Exception as exc:
             return self.send_json({"error": f"{type(exc).__name__}: {exc}"}, 500)
