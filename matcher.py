@@ -294,7 +294,12 @@ class KnowledgeMatcher:
         # Example: "principal of Siddaganga Institute of Technology" also exactly
         # contains the broad "Siddaganga Institute of Technology" keyword.
         scored_results.sort(
-            key=lambda x: (matches_specialized_intent(x[1]), x[0], x[1].get("updated_at", "")),
+            key=lambda x: (
+                matches_specialized_intent(x[1]),
+                normalize_query(x[1].get("title", "")) == query_norm,
+                x[0],
+                x[1].get("updated_at", ""),
+            ),
             reverse=True,
         )
 
