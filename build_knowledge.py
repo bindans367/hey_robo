@@ -1092,6 +1092,29 @@ def apply_reviewed_updates():
         if topic_id in topics_by_id:
             topics_by_id[topic_id]["answer"] = answer
 
+    # Detailed, reviewed additions live separately so source-based FAQ updates
+    # remain easy to maintain without editing the large builder by hand.
+    expansion_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "knowledge_expansion.json")
+    try:
+        with open(expansion_path, "r", encoding="utf-8") as f:
+            expansion = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        expansion = []
+    for source_item in expansion:
+        item = dict(source_item)
+        item["keywords"] = list(dict.fromkeys(
+            [*item.get("keywords", []), *item.pop("questions", [])]
+        ))
+        item.pop("source_document", None)
+        topic_id = item.get("id")
+        if not topic_id:
+            continue
+        if topic_id in topics_by_id:
+            topics_by_id[topic_id].update(item)
+        else:
+            TOPICS.append(item)
+            topics_by_id[topic_id] = item
+
 
 apply_reviewed_updates()
 

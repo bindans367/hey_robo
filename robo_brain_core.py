@@ -23,9 +23,9 @@ _mic_turn_lock = threading.Lock()
 DEFAULT_SETTINGS = {
     "mode": "offline",
     "system_prompt": "You are Robo, a friendly, clear, respectful humanoid campus guide for Siddaganga Institute of Technology. Speak in simple natural language. For SIT facts, use the supplied knowledge context and never invent people, dates, numbers, or policies. If the answer is unknown, say so and suggest checking with the college.",
-    "voice": {"gender": "female", "name": "", "provider": "gemini", "voice_id": "Kore", "style": "indian_clear", "speed": 0.95, "pitch": 0, "volume": 100},
+    "voice": {"gender": "female", "name": "en-IN-NeerjaNeural", "provider": "edge", "voice_id": "en-IN-NeerjaNeural", "style": "indian_clear", "speed": 0.95, "pitch": 0, "volume": 100},
     "local_llm": {"base_url": "http://127.0.0.1:11434/v1", "model": "qwen3:0.6b", "api_key": ""},
-    "online": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "model": "gemini-3.8-flash", "tts_model": "gemini-3.8-flash-tts", "transcription_model": "gemini-3.5-transcribe", "api_key": "", "transcription_api_key": ""},
+    "online": {"provider": "openrouter-nemotron", "base_url": "https://openrouter.ai/api/v1", "model": "nvidia/nemotron-3.5-lightning:free", "tts_model": "gemini-3.8-flash-tts", "transcription_model": "gemini-3.5-transcribe", "api_key": "", "transcription_api_key": ""},
     "conversation": {
         "welcome": "Welcome to SIT. I’m Robo, your campus guide.",
         "wake_phrases": ["hey robo", "hey robot", "hello robo", "hello robot", "hit o boo", "hitable", "here it will go"],
@@ -161,6 +161,16 @@ def get_settings():
             for key in ("voice", "online", "local_llm", "conversation", "microphone"):
                 if isinstance(saved.get(key), dict):
                     merged[key].update(saved[key])
+        # Migrate the old untouched Gemini default to the requested Nemotron
+        # default. Keep saved API keys intact; keys are provider-specific.
+        saved_online = saved.get("online", {}) if isinstance(saved, dict) else {}
+        if isinstance(saved_online, dict):
+            saved_host = (urlparse(str(saved_online.get("base_url") or "")).hostname or "").lower()
+            saved_model = str(saved_online.get("model") or "").strip().lower()
+            if not saved_online.get("provider") and saved_host == "generativelanguage.googleapis.com" and saved_model in {"gemini-3.8-flash", "gemini-flash-lite-latest"}:
+                merged["online"]["provider"] = "openrouter-nemotron"
+                merged["online"]["base_url"] = DEFAULT_SETTINGS["online"]["base_url"]
+                merged["online"]["model"] = DEFAULT_SETTINGS["online"]["model"]
         # Older dashboard saves can contain JSON nulls for optional provider
         # fields. Normalize them before URL parsing or any string operations.
         for section in ("online", "local_llm"):
@@ -193,16 +203,9 @@ def get_settings():
             merged["online"]["api_key"] = os.environ["ROBO_BRAIN_API_KEY"]
         if merged["mode"] not in ("offline", "local", "online"):
             merged["mode"] = "offline"
+        # Keep one voice for every answer path and answer mode.
         voice = merged["voice"]
-        provider = voice.get("provider", "edge")
-        voice_id = str(voice.get("voice_id", ""))
-        valid_voice = (provider == "gemini" and voice_id in GEMINI_TTS_VOICES) or (provider == "edge" and bool(re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id))) or provider == "system"
-        if not valid_voice:
-            voice["provider"] = "edge"
-            voice["voice_id"] = "en-IN-NeerjaNeural"
-            voice["gender"] = "female"
-            voice["name"] = "en-IN-NeerjaNeural"
-        voice["style"] = voice.get("style", "indian_clear") if voice.get("style") in GEMINI_TTS_STYLES else "indian_clear"
+        voice.update({"provider": "edge", "voice_id": "en-IN-NeerjaNeural", "gender": "female", "name": "en-IN-NeerjaNeural", "style": "indian_clear"})
         return merged
 
 def save_settings(new_settings):
@@ -215,33 +218,7 @@ def save_settings(new_settings):
             settings[key].update(new_settings[key])
     settings["mode"] = settings["mode"] if settings["mode"] in ("offline", "local", "online") else "offline"
     voice = settings["voice"]
-    voice["gender"] = voice.get("gender", "female") if voice.get("gender") in ("female", "male", "default") else "female"
-    known_voice_genders = {
-        "en-IN-AaravNeural": "male",
-        "en-IN-AashiNeural": "female",
-        "en-IN-AartiNeural": "female",
-        "en-IN-ArjunNeural": "male",
-        "en-IN-AnanyaNeural": "female",
-        "en-IN-KavyaNeural": "female",
-        "en-IN-KunalNeural": "male",
-        "en-IN-NeerjaNeural": "female",
-        "en-IN-PrabhatNeural": "male",
-        "en-IN-RehaanNeural": "male",
-    }
-    voice_id = str(voice.get("voice_id", "en-IN-NeerjaNeural"))
-    requested_provider = voice.get("provider", "edge")
-    if requested_provider == "gemini" and voice_id in GEMINI_TTS_VOICES:
-        voice["provider"] = "gemini"
-    elif requested_provider == "system":
-        voice["provider"] = "system"
-    else:
-        voice["provider"] = "edge"
-        voice_id = voice_id if re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id) else "en-IN-NeerjaNeural"
-    voice["voice_id"] = voice_id
-    voice["style"] = voice.get("style", "indian_clear") if voice.get("style") in GEMINI_TTS_STYLES else "indian_clear"
-    if voice["provider"] == "edge":
-        voice["gender"] = known_voice_genders.get(voice["voice_id"], voice.get("gender", "female"))
-        voice["name"] = voice["voice_id"]
+    voice.update({"provider": "edge", "voice_id": "en-IN-NeerjaNeural", "gender": "female", "name": "en-IN-NeerjaNeural", "style": "indian_clear"})
     voice["speed"] = max(0.65, min(1.4, float(voice.get("speed", 1.0))))
     voice["pitch"] = max(-10, min(10, int(voice.get("pitch", 0))))
     voice["volume"] = max(0, min(100, int(voice.get("volume", 100))))

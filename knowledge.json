@@ -84,7 +84,7 @@
       "centenarian seer",
       "who started sit"
     ],
-    "answer": "SIT was founded by Dr. Sree Sree Shivakumara Swamigalu. He was known for supporting education, food, and shelter through Siddaganga Math. Would you like help finding the right office?"
+    "answer": "SIT was founded by Dr. Sree Sree Shivakumara Swamigalu. He was known for supporting education, food, and shelter through Siddaganga Math."
   },
   {
     "id": "president_swamiji",
@@ -101,7 +101,7 @@
       "education society president",
       "who is the president"
     ],
-    "answer": "The Sree Siddaganga Education Society is guided by Sree Sree Siddalinga Swamigalu, continuing the educational work of the Math. Can I help you find another campus contact?"
+    "answer": "The Sree Siddaganga Education Society is guided by Sree Sree Siddalinga Swamigalu, continuing the educational work of the Math."
   },
   {
     "id": "principal_sit",
@@ -157,7 +157,7 @@
       "who manages sit",
       "sit management team"
     ],
-    "answer": "For the latest director and management details, the college office can connect you with the right person. The official contact number is 0816-2214001. Can I help you find another campus contact?"
+    "answer": "For the latest director and management details, the college office can connect you with the right person. The official contact number is 0816-2214001."
   },
   {
     "id": "location_address",
@@ -198,7 +198,7 @@
       "how to visit sit",
       "tumkur railway station"
     ],
-    "answer": "SIT is in Tumakuru on Dr. Sree Sree Sivakumara Swamiji Road. Open the Contact Us page on the SIT website for a map and directions from where you are. Would directions or contact details help?",
+    "answer": "SIT is in Tumakuru on Dr. Sree Sree Sivakumara Swamiji Road. Open the Contact Us page on the SIT website for a map and directions from where you are.",
     "sources": [
       "https://sit.ac.in/contact-us/"
     ]
@@ -219,7 +219,7 @@
       "reception number",
       "helpline"
     ],
-    "answer": "You can reach the admissions office on 0816-2282696, 0816-2214001, or 0816-2214002. The main email is principal@sit.ac.in. Want help finding your way around campus?",
+    "answer": "You can reach the admissions office on 0816-2282696, 0816-2214001, or 0816-2214002. The main email is principal@sit.ac.in.",
     "sources": [
       "https://sit.ac.in/contact-us/"
     ]
@@ -271,7 +271,7 @@
       "how to get management seat",
       "management fees"
     ],
-    "answer": "Management-category seats depend on the course and current admission cycle. Call the admissions office on 0816-2282696 and ask about the course you want; they can confirm the current process and fees. Tell me what you plan to study and I’ll help with the next step.",
+    "answer": "Management-category seats depend on the course and current admission cycle. Call the admissions office on 0816-2282696 and ask about the course you want; they can confirm the current process and fees.",
     "sources": [
       "https://sit.ac.in/admission/"
     ]
@@ -311,7 +311,7 @@
       "pay fees",
       "tuition fee"
     ],
-    "answer": "SIT lists government, institute, donor, and merit scholarships. The amounts and eligibility vary, so the Accounts Office can help you find the ones that fit your situation. For current fees, please check with Admissions. Tell me what you plan to study and I’ll help with the next step.",
+    "answer": "SIT lists government, institute, donor, and merit scholarships. The amounts and eligibility vary, so the Accounts Office can help you find the ones that fit your situation. For current fees, please check with Admissions.",
     "sources": [
       "https://sit.ac.in/scholarship/",
       "https://sit.ac.in/admission/"
@@ -364,7 +364,7 @@
       "highest package in cse",
       "highest package in placement"
     ],
-    "answer": "For the 2024–25 batch, SIT reports an average package of 9 lakh rupees per year and a highest package of 32.88 lakh. Those figures are for that batch; newer results may change. Would you like help finding the latest placement update?",
+    "answer": "For the 2024–25 batch, SIT reports an average package of 9 lakh rupees per year and a highest package of 32.88 lakh. Those figures are for that batch; newer results may change.",
     "sources": [
       "https://sit.ac.in/sit-placements/"
     ]
@@ -388,7 +388,7 @@
       "target",
       "hiring companies"
     ],
-    "answer": "Companies visiting SIT can change from year to year. The placement office publishes the current recruiter list, and I can tell you about the latest batch results too. Would you like help finding the latest placement update?",
+    "answer": "Companies visiting SIT can change from year to year. The placement office publishes the current recruiter list, and I can tell you about the latest batch results too.",
     "sources": [
       "https://sit.ac.in/sit-placements/"
     ]
@@ -408,7 +408,7 @@
       "hostel for boys",
       "how many boys hostel"
     ],
-    "answer": "SIT has separate boys’ and girls’ hostels, with rooms, a vegetarian mess, Wi-Fi, study areas, and wardens. Ask the hostel office about current room availability and fees. Is there another hostel detail you’d like to check?",
+    "answer": "SIT has separate boys’ and girls’ hostels, with rooms, a vegetarian mess, Wi-Fi, study areas, and wardens. Ask the hostel office about current room availability and fees.",
     "sources": [
       "https://sit.ac.in/hostel/"
     ]
@@ -427,7 +427,7 @@
       "girls security",
       "women hostel"
     ],
-    "answer": "SIT has separate girls’ hostel accommodation with a mess, Wi-Fi, study areas, recreation spaces, and wardens. The hostel office can confirm current availability and rules. Is there another hostel detail you’d like to check?",
+    "answer": "SIT has separate girls’ hostel accommodation with a mess, Wi-Fi, study areas, recreation spaces, and wardens. The hostel office can confirm current availability and rules.",
     "sources": [
       "https://sit.ac.in/hostel/"
     ]
@@ -448,7 +448,7 @@
       "boy hostel mess",
       "girls hostel mess"
     ],
-    "answer": "The hostel mess serves vegetarian meals. If you’re staying in the hostel, the warden can tell you the current menu and meal timings. Is there another hostel detail you’d like to check?"
+    "answer": "The hostel mess serves vegetarian meals. If you’re staying in the hostel, the warden can tell you the current menu and meal timings."
   },
   {
     "id": "hostel_timings_rules",
@@ -465,7 +465,7 @@
       "permission for hostel",
       "gate pass"
     ],
-    "answer": "Hostel entry and leave rules can depend on the hostel and current policy. Before planning a late return or overnight leave, please check with your warden. Is there another hostel detail you’d like to check?"
+    "answer": "Hostel entry and leave rules can depend on the hostel and current policy. Before planning a late return or overnight leave, please check with your warden."
   },
   {
     "id": "central_library",
@@ -484,7 +484,7 @@
       "journals",
       "library open"
     ],
-    "answer": "The Central Library has books, reading spaces, book-bank services, and online learning resources. Its hours can change during exams, so check the library page for today’s timings. Would you like help finding another campus service?",
+    "answer": "The Central Library has books, reading spaces, book-bank services, and online learning resources. Its hours can change during exams, so check the library page for today’s timings.",
     "sources": [
       "https://sit.ac.in/library/"
     ]
@@ -503,7 +503,7 @@
       "convocation hall",
       "seminar hall"
     ],
-    "answer": "Birla Auditorium is one of the main venues for college events, talks, and large gatherings. If you’re going to a particular programme, check its notice for the venue and time. What else would make your visit to campus easier?"
+    "answer": "Birla Auditorium is one of the main venues for college events, talks, and large gatherings. If you’re going to a particular programme, check its notice for the venue and time."
   },
   {
     "id": "gandhi_bhavan",
@@ -515,7 +515,7 @@
       "where is gandhi bhavan",
       "multipurpose hall"
     ],
-    "answer": "Gandhi Bhavan is a campus venue used for talks, gatherings, and student activities. Check the event notice to confirm where your programme is being held. What else would make your visit to campus easier?"
+    "answer": "Gandhi Bhavan is a campus venue used for talks, gatherings, and student activities. Check the event notice to confirm where your programme is being held."
   },
   {
     "id": "canteen_and_cafeteria",
@@ -533,7 +533,7 @@
       "canteen food",
       "nescafe kiosk"
     ],
-    "answer": "There are food and refreshment options on campus. The campus page has the current facilities; ask a student or staff member nearby for the closest one. Would you like help finding another campus service?"
+    "answer": "There are food and refreshment options on campus. The campus page has the current facilities; ask a student or staff member nearby for the closest one."
   },
   {
     "id": "health_centre",
@@ -551,7 +551,7 @@
       "emergency medical",
       "sick in college"
     ],
-    "answer": "If you’re feeling unwell, the campus Health Centre offers basic medical care and referrals. It lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. You can call 0816-2214075 before going. What else would make your visit to campus easier?",
+    "answer": "If you’re feeling unwell, the campus Health Centre offers basic medical care and referrals. It lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. You can call 0816-2214075 before going.",
     "sources": [
       "https://sit.ac.in/health-centre/"
     ]
@@ -570,7 +570,7 @@
       "banking on campus",
       "postal service on campus"
     ],
-    "answer": "The campus has a co-operative society and a post office. For the nearest ATM or banking service, check the campus map or ask at the main office. What else would make your visit to campus easier?"
+    "answer": "The campus has a co-operative society and a post office. For the nearest ATM or banking service, check the campus map or ask at the main office."
   },
   {
     "id": "sports_and_gym",
@@ -604,7 +604,7 @@
       "labs in cse",
       "computer science and engineering"
     ],
-    "answer": "Computer Science and Engineering is a good place to explore software, computing, and problem-solving. Check the department page for its current courses and curriculum. Would you like a simple comparison with another branch?"
+    "answer": "Computer Science and Engineering is a good place to explore software, computing, and problem-solving. Check the department page for its current courses and curriculum."
   },
   {
     "id": "ise_department",
@@ -634,7 +634,7 @@
       "aiml department",
       "ai branch"
     ],
-    "answer": "Artificial Intelligence and Machine Learning focuses on how computers learn from data and solve problems such as language or image recognition. The department page has SIT’s current course details. Would you like a simple comparison with another branch?"
+    "answer": "Artificial Intelligence and Machine Learning focuses on how computers learn from data and solve problems such as language or image recognition. The department page has SIT’s current course details."
   },
   {
     "id": "aids_department",
@@ -648,7 +648,7 @@
       "aids department",
       "big data branch"
     ],
-    "answer": "Artificial Intelligence and Data Science brings together computing, statistics, and working with data. Check the department page for current subjects and programme details. Would you like a simple comparison with another branch?"
+    "answer": "Artificial Intelligence and Data Science brings together computing, statistics, and working with data. Check the department page for current subjects and programme details."
   },
   {
     "id": "ece_department",
@@ -663,7 +663,7 @@
       "embedded systems",
       "electronics and communication"
     ],
-    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities. Would you like a simple comparison with another branch?"
+    "answer": "Electronics and Communication Engineering covers electronics, communication systems, and connected devices. The department page has the current curriculum and facilities."
   },
   {
     "id": "eee_department",
@@ -678,7 +678,7 @@
       "power systems",
       "electric vehicle"
     ],
-    "answer": "Electrical and Electronics Engineering covers electrical systems, electronics, and areas such as energy and control. The department page has the current course details. Would you like a simple comparison with another branch?"
+    "answer": "Electrical and Electronics Engineering covers electrical systems, electronics, and areas such as energy and control. The department page has the current course details."
   },
   {
     "id": "ete_department",
@@ -693,7 +693,7 @@
       "microwave lab",
       "optical communication"
     ],
-    "answer": "Electronics and Telecommunication Engineering focuses on communication technologies and electronic systems. You can find the current subjects on its department page. Tell me what subjects you enjoy and I’ll help you explore further."
+    "answer": "Electronics and Telecommunication Engineering focuses on communication technologies and electronic systems. You can find the current subjects on its department page."
   },
   {
     "id": "mech_department",
@@ -709,7 +709,7 @@
       "workshop in sit",
       "thermodynamics"
     ],
-    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities. Would you like a simple comparison with another branch?"
+    "answer": "Mechanical Engineering is about designing and making machines, products, and systems. The SIT department page can show you the current course structure and student activities."
   },
   {
     "id": "civil_department",
@@ -724,7 +724,7 @@
       "concrete lab",
       "geotechnical"
     ],
-    "answer": "Civil Engineering focuses on the built environment, including structures, roads, water, and construction. The department page has SIT’s current course details. Would you like a simple comparison with another branch?"
+    "answer": "Civil Engineering focuses on the built environment, including structures, roads, water, and construction. The department page has SIT’s current course details."
   },
   {
     "id": "chem_department",
@@ -738,7 +738,7 @@
       "process engineering",
       "reaction engineering"
     ],
-    "answer": "Chemical Engineering applies engineering to making and processing materials and products. Check the department page for current subjects, labs, and programme details. Would you like a simple comparison with another branch?"
+    "answer": "Chemical Engineering applies engineering to making and processing materials and products. Check the department page for current subjects, labs, and programme details."
   },
   {
     "id": "biotech_department",
@@ -752,7 +752,7 @@
       "genetic engineering in sit",
       "fermentation lab"
     ],
-    "answer": "Biotechnology combines biology with technology and engineering. The department page is the best place to see SIT’s current subjects and research areas. Tell me what subjects you enjoy and I’ll help you explore further."
+    "answer": "Biotechnology combines biology with technology and engineering. The department page is the best place to see SIT’s current subjects and research areas."
   },
   {
     "id": "iem_department",
@@ -765,7 +765,7 @@
       "supply chain management",
       "operations research"
     ],
-    "answer": "Industrial Engineering and Management looks at how to make systems, services, and workplaces work better. It combines engineering with planning and management. Would you like a simple comparison with another branch?"
+    "answer": "Industrial Engineering and Management looks at how to make systems, services, and workplaces work better. It combines engineering with planning and management."
   },
   {
     "id": "architecture_department",
@@ -780,7 +780,7 @@
       "council of architecture",
       "5 year architecture course"
     ],
-    "answer": "SIT offers a five-year Bachelor of Architecture programme. It combines design, buildings, technology, and the way people use spaces. Would you like a simple comparison with another branch?"
+    "answer": "SIT offers a five-year Bachelor of Architecture programme. It combines design, buildings, technology, and the way people use spaces."
   },
   {
     "id": "mba_mca_departments",
@@ -811,7 +811,7 @@
       "academic regulations",
       "syllabus of sit"
     ],
-    "answer": "SIT is autonomous, so it publishes its own programme curricula and academic rules while remaining affiliated with VTU. The Academic Procedure page has the current documents. Want help checking which rule applies to your course and batch?"
+    "answer": "SIT is autonomous, so it publishes its own programme curricula and academic rules while remaining affiliated with VTU. The Academic Procedure page has the current documents."
   },
   {
     "id": "cie_and_see_exams",
@@ -830,7 +830,7 @@
       "exam marks",
       "cie marks"
     ],
-    "answer": "CIE means your internal assessment, and SEE is the semester-end exam. The exact marks and eligibility rules depend on your course and batch, so check your current regulations or ask your department. Want help checking which rule applies to your course and batch?",
+    "answer": "CIE means your internal assessment, and SEE is the semester-end exam. The exact marks and eligibility rules depend on your course and batch, so check your current regulations or ask your department.",
     "sources": [
       "https://sit.ac.in/academic-procedure/",
       "https://sit.ac.in/controller-of-examinations/"
@@ -850,7 +850,7 @@
       "75 percent attendance",
       "85 percent attendance"
     ],
-    "answer": "SIT’s current guideline says students need at least 85% attendance in each subject to be eligible for semester exams. It also lists an IA requirement. Check your batch’s rules or ask your department if you’re unsure. Would you like help finding the right academic document?",
+    "answer": "SIT’s current guideline says students need at least 85% attendance in each subject to be eligible for semester exams. It also lists an IA requirement. Check your batch’s rules or ask your department if you’re unsure.",
     "sources": [
       "https://sit.ac.in/attendance/",
       "https://sit.ac.in/academic-procedure/"
@@ -871,7 +871,7 @@
       "10 point scale",
       "grading system"
     ],
-    "answer": "SGPA is your grade-point average for one semester; CGPA combines your results across semesters. The exact grading rules are in the regulations for your programme and batch. Want help checking which rule applies to your course and batch?"
+    "answer": "SGPA is your grade-point average for one semester; CGPA combines your results across semesters. The exact grading rules are in the regulations for your programme and batch."
   },
   {
     "id": "halcyon_fest",
@@ -889,7 +889,7 @@
       "pro night",
       "dance competition"
     ],
-    "answer": "Halcyon is one of SIT’s student cultural festivals, with performances and activities. The dates and programme change each year, so look out for the current campus announcement. Want to hear about another student event?"
+    "answer": "Halcyon is one of SIT’s student cultural festivals, with performances and activities. The dates and programme change each year, so look out for the current campus announcement."
   },
   {
     "id": "sit_expo_tech_fest",
@@ -905,7 +905,7 @@
       "science fest",
       "technical events"
     ],
-    "answer": "SIT Expo gives students a chance to present projects and ideas. Check the current college notices for this year’s date, venue, and participation details. Want to hear about another student event?"
+    "answer": "SIT Expo gives students a chance to present projects and ideas. Check the current college notices for this year’s date, venue, and participation details."
   },
   {
     "id": "clubs_and_societies",
@@ -922,17 +922,9 @@
       "spic macay",
       "coding club",
       "sae baja",
-      "technical clubs in sit",
-      "tell me about the club",
-      "tell me about clubs",
-      "what clubs are there",
-      "what clubs does sit have",
-      "student activities",
-      "clubs in college",
-      "college clubs",
-      "club activities"
+      "technical clubs in sit"
     ],
-    "answer": "SIT has a lively mix of technical, cultural, and service groups. You’ll find options such as robotics, coding, racing, theatre, music, quizzing, and IEEE chapters. Are you more interested in technical or cultural clubs?",
+    "answer": "There are technical, cultural, and service groups at SIT. You’ll find options such as robotics, coding, racing, theatre, music, quizzing, and IEEE chapters. Are you more interested in technical or cultural clubs?",
     "sources": [
       "https://sit.ac.in/clubs/",
       "https://sit.ac.in/campus/"
@@ -953,7 +945,7 @@
       "air wing",
       "army wing"
     ],
-    "answer": "NCC gives students a chance to take part in structured cadet training, while NSS focuses on community service. Ask the campus coordinators about joining and this year’s activities. Is there a club or activity you’re curious about?"
+    "answer": "NCC gives students a chance to take part in structured cadet training, while NSS focuses on community service. Ask the campus coordinators about joining and this year’s activities."
   },
   {
     "id": "incubation_tbi_idea_lab",
@@ -971,7 +963,7 @@
       "maker space",
       "innovation in sit"
     ],
-    "answer": "SIT has facilities to help students explore ideas and build prototypes, including an IDEA Lab and incubation support. If you have a project in mind, ask the relevant centre how students can get started. What else would make your visit to campus easier?"
+    "answer": "SIT has facilities to help students explore ideas and build prototypes, including an IDEA Lab and incubation support. If you have a project in mind, ask the relevant centre how students can get started."
   },
   {
     "id": "anti_ragging_policy",
@@ -986,7 +978,7 @@
       "grievance",
       "zero tolerance ragging"
     ],
-    "answer": "If you’re worried about ragging or feel unsafe, tell a trusted faculty member or contact SIT’s Anti-Ragging Officer right away. The college lists the officer and contact details on its website. Would you like help finding the right academic document?"
+    "answer": "If you’re worried about ragging or feel unsafe, tell a trusted faculty member or contact SIT’s Anti-Ragging Officer right away. The college lists the officer and contact details on its website."
   },
   {
     "id": "college_timings_dress_code",
@@ -1002,7 +994,7 @@
       "uniform in sit",
       "id card rule"
     ],
-    "answer": "Class times can differ by programme and semester. Please check your timetable or ask your department for today’s schedule; the Academic Calendar page lists important semester dates. Would you like help finding the right academic document?"
+    "answer": "Class times can differ by programme and semester. Please check your timetable or ask your department for today’s schedule; the Academic Calendar page lists important semester dates."
   },
   {
     "id": "wifi_and_internet",
@@ -1017,7 +1009,7 @@
       "is wifi available",
       "broadband in sit"
     ],
-    "answer": "SIT provides campus and hostel internet access for learning. If you’re having trouble connecting, ask your department or the campus IT support team for the current login steps. Would you like help finding another campus service?"
+    "answer": "SIT provides campus and hostel internet access for learning. If you’re having trouble connecting, ask your department or the campus IT support team for the current login steps."
   },
   {
     "id": "green_initiatives",
@@ -1031,7 +1023,7 @@
       "environmental sustainability",
       "eco friendly sit"
     ],
-    "answer": "SIT highlights campus sustainability efforts, including solar power and rainwater harvesting. The Green Initiatives page has more about the projects currently in place. What else about SIT would you like to know?"
+    "answer": "SIT highlights campus sustainability efforts, including solar power and rainwater harvesting. The Green Initiatives page has more about the projects currently in place."
   },
   {
     "id": "greetings",
@@ -1085,7 +1077,7 @@
       "dhanyavada",
       "thanks a lot"
     ],
-    "answer": "You’re welcome! I’m glad I could help. Have a good day at SIT. What else can I help you with?"
+    "answer": "You’re welcome! I’m glad I could help. Have a good day at SIT."
   },
   {
     "id": "help_capabilities",
@@ -1120,7 +1112,7 @@
       "academic year calendar",
       "2025 26 calendar"
     ],
-    "answer": "The calendar depends on your programme and semester. Open SIT’s Academic Procedure page and choose your course and semester to see the right dates. Would you like a simple comparison with another branch?",
+    "answer": "The calendar depends on your programme and semester. Open SIT’s Academic Procedure page and choose your course and semester to see the right dates.",
     "sources": [
       "https://sit.ac.in/academic-procedure/"
     ]
@@ -1224,7 +1216,7 @@
       "documents for be admission",
       "joining documents"
     ],
-    "answer": "The documents you need depend on your course and admission route. SIT has separate checklists for each one; tell me your programme and route, and I’ll point you to the right checklist. Which course or admission route are you exploring?",
+    "answer": "The documents you need depend on your course and admission route. SIT has separate checklists for each one; tell me your programme and route, and I’ll point you to the right checklist.",
     "sources": [
       "https://sit.ac.in/doc-required/",
       "https://sit.ac.in/admission/"
@@ -1263,7 +1255,7 @@
       "student clubs 2025",
       "introduction to sit clubs"
     ],
-    "answer": "At the 2025 student induction, clubs introduced activities in coding, engineering, arts, quizzes, and more. Some names were AI Brewery, Decoders, Soaring Eagles, Team Quest, and The Book Cult. The current Clubs page has the latest list. Would you like to know how students can get involved?",
+    "answer": "At the 2025 student induction, clubs introduced activities in coding, engineering, arts, quizzes, and more. Some names were AI Brewery, Decoders, Soaring Eagles, Team Quest, and The Book Cult. The current Clubs page has the latest list.",
     "sources": [
       "https://sit.ac.in/clubs/",
       "https://sit.ac.in/campus/",
@@ -1284,7 +1276,7 @@
       "health centre phone",
       "medical help on campus"
     ],
-    "answer": "The Health Centre lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. Call 0816-2214075 to check before you go. What else would make your visit to campus easier?",
+    "answer": "The Health Centre lists weekday hours as 9 to 1 and 3 to 6, and Saturday hours as 9 to 1. Call 0816-2214075 to check before you go.",
     "sources": [
       "https://sit.ac.in/health-centre/"
     ]
@@ -1319,7 +1311,7 @@
       "compare computer branches",
       "which computer branch is better"
     ],
-    "answer": "In simple terms, CSE gives you a broad computing foundation, ISE focuses more on information systems, and AI and Data Science focus on intelligent systems and data. The exact subjects differ, so compare SIT’s current course plans before choosing. Tell me what subjects you enjoy and I’ll help you explore further.",
+    "answer": "In simple terms, CSE gives you a broad computing foundation, ISE focuses more on information systems, and AI and Data Science focus on intelligent systems and data. The exact subjects differ, so compare SIT’s current course plans before choosing.",
     "sources": [
       "https://sit.ac.in/department/"
     ]
@@ -1361,6 +1353,715 @@
     "sources": [
       "https://sit.ac.in/admission-form/",
       "https://sit.ac.in/contact-us/"
+    ]
+  },
+  {
+    "id": "rule_attendance",
+    "title": "Attendance requirement",
+    "category": "regulations_faq",
+    "keywords": [
+      "How much attendance do I need for exams?",
+      "What is the minimum attendance per subject?",
+      "Can I write SEE with low attendance?",
+      "What attendance is required to be eligible for semester exams?",
+      "Tell me SIT attendance rules"
+    ],
+    "answer": "The 2024–25 rules require at least 85% attendance in each course to sit the SEE. Condonation between 75% and below 85% is limited to approved valid grounds, so confirm your batch’s current rule with your department.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_attendance_condonation",
+    "title": "Attendance shortage and condonation",
+    "category": "regulations_faq",
+    "keywords": [
+      "Can attendance shortage be condoned?",
+      "How do I apply for attendance condonation?",
+      "Is 75 percent attendance enough at SIT?",
+      "What happens if my attendance is below 75 percent?",
+      "Who approves attendance shortage?"
+    ],
+    "answer": "Under the 2024–25 rules, the Principal may consider attendance from 75% to below 85% for documented valid reasons. Apply through your HoD with supporting records well before the examination; below 75% is not condonable under that rulebook.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_course_registration_load",
+    "title": "Maximum course registration",
+    "category": "regulations_faq",
+    "keywords": [
+      "How many credits can I register in one semester?",
+      "What is the maximum credit load at SIT?",
+      "Do backlog subjects count in the credit limit?",
+      "Can I take more than 28 credits?",
+      "What is the semester registration limit?"
+    ],
+    "answer": "The 2024–25 rulebook caps registration at 28 credits in a semester, including regular courses and backlogs. Ask your Faculty Advisor or Academic Office to check your specific course plan.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_cie_see",
+    "title": "CIE and SEE",
+    "category": "regulations_faq",
+    "keywords": [
+      "What is the difference between CIE and SEE?",
+      "What does CIE mean?",
+      "What does SEE mean?",
+      "How are internal and semester exams different?",
+      "Explain SIT assessment simply"
+    ],
+    "answer": "CIE means continuous internal evaluation during the semester, while SEE is the semester-end examination. The exact marks split and assessment pattern depend on your programme, course, and batch.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_compensatory_test",
+    "title": "Compensatory tests",
+    "category": "regulations_faq",
+    "keywords": [
+      "Who can take a compensatory test?",
+      "How do I apply for a makeup test?",
+      "Can I get a retest if I was hospitalized?",
+      "What is SIT compensatory test policy?",
+      "When should I contact my HoD for a missed test?"
+    ],
+    "answer": "The 2024–25 rules allow a compensatory test in specified cases such as hospitalization or a serious family emergency. The rulebook sets attendance and application conditions, so contact your HoD promptly with documents.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_faculty_advisor",
+    "title": "Faculty Advisor and proctor",
+    "category": "regulations_faq",
+    "keywords": [
+      "What does a Faculty Advisor do?",
+      "Who is my proctor?",
+      "Can my mentor help with course registration?",
+      "Who can guide me about academic progress?",
+      "Where should I go for student mentoring?"
+    ],
+    "answer": "The rulebook describes a faculty advisor or proctor as a mentor for a small student group. They can help with course registration, academic progress, and whom to contact for student support.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_counselling_support",
+    "title": "Counselling and student support",
+    "category": "regulations_faq",
+    "keywords": [
+      "Is counselling available for students?",
+      "Where can I get personal support at SIT?",
+      "Who can help if I am stressed?",
+      "Can I talk to a student counsellor?",
+      "What support is there for academically weak students?"
+    ],
+    "answer": "The 2024–25 rules describe counselling support for students facing academic or personal difficulty. Contact your Faculty Advisor, Proctor, or the Students Counselling Cell to ask for confidential guidance.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_academic_grievance",
+    "title": "Academic grievance process",
+    "category": "regulations_faq",
+    "keywords": [
+      "How do I raise an academic complaint?",
+      "Where can I submit a grievance?",
+      "How long does grievance review take?",
+      "Who handles academic grievances at SIT?",
+      "What should I do about an academic issue?"
+    ],
+    "answer": "The rulebook says students can submit academic grievances in writing to the Grievance Redressal Cell. It describes a report and recommendations within 15 days; check with the office for the current submission route.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_student_induction",
+    "title": "Student induction programme",
+    "category": "regulations_faq",
+    "keywords": [
+      "What is the student induction programme?",
+      "How long is induction for new students?",
+      "What happens during student induction?",
+      "What activities are part of induction?",
+      "Why does SIT conduct induction?"
+    ],
+    "answer": "The 2024–25 rulebook describes a three-week induction to help new students settle into college and understand its academic and student culture. It includes mentoring, department familiarisation, physical and creative activities, and talks or workshops.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_degree_completion",
+    "title": "Degree completion requirements",
+    "category": "regulations_faq",
+    "keywords": [
+      "What do I need to complete before graduation?",
+      "What are the degree completion requirements?",
+      "Can pending dues stop my degree?",
+      "Do I need to clear all failed courses to graduate?",
+      "Who can check my graduation eligibility?"
+    ],
+    "answer": "The rulebook requires students to complete the programme credits and mandatory courses, clear failing grades, and settle institute dues. Check your current programme regulations and transcript with the Academic Office before graduation.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_be_honours",
+    "title": "B.E. honours eligibility",
+    "category": "regulations_faq",
+    "keywords": [
+      "How can I get B.E. Honours?",
+      "What CGPA is needed for B.E. Honours?",
+      "When can I register for Honours?",
+      "What are the Honours eligibility rules?",
+      "Does Honours need first-attempt passes?"
+    ],
+    "answer": "The 2024–25 rulebook lists eligibility conditions for B.E. Honours, including a CGPA above 7.50 at the end of semester four and first-attempt passes through that point. It also lists a final CGPA above 8.5, so verify the exact current rules with your department.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_be_minor",
+    "title": "B.E. minor eligibility",
+    "category": "regulations_faq",
+    "keywords": [
+      "What is a B.E. minor?",
+      "How many credits are needed for a minor?",
+      "Who is eligible to take a minor?",
+      "Can I take a minor with a backlog?",
+      "What CGPA is required for a minor?"
+    ],
+    "answer": "The 2024–25 rulebook describes a minor as an optional 18-credit addition and lists a minimum CGPA and backlog conditions. Eligibility can depend on your batch regulations, so ask your Faculty Advisor before planning it.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_activity_points",
+    "title": "AICTE activity points",
+    "category": "regulations_faq",
+    "keywords": [
+      "How many activity points do I need?",
+      "What are AICTE activity points?",
+      "Do activity points count in CGPA?",
+      "Are activity points required for graduation?",
+      "How many activity points for lateral entry?"
+    ],
+    "answer": "The 2024–25 rulebook lists activity-point requirements of 100 points for regular-entry students and 75 for lateral-entry students. It says these points do not count toward CGPA but must be completed for the degree; confirm your record with the coordinator.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_conduct_etiquette",
+    "title": "Student conduct and etiquette",
+    "category": "regulations_faq",
+    "keywords": [
+      "What is the student code of conduct?",
+      "What are the basic campus rules?",
+      "Can I use lab equipment without permission?",
+      "What behaviour is expected in the library?",
+      "What are SIT classroom etiquette rules?"
+    ],
+    "answer": "The rulebook asks students to be courteous, punctual, appropriately dressed, and considerate in classrooms and the library. Use laboratories and equipment only with staff permission and follow current campus notices.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_anti_ragging",
+    "title": "Ragging policy",
+    "category": "regulations_faq",
+    "keywords": [
+      "What should I do if I see ragging?",
+      "Does SIT have an anti-ragging policy?",
+      "Who should I contact about ragging?",
+      "Is ragging taken seriously at SIT?",
+      "Where can I report ragging?"
+    ],
+    "answer": "The rulebook treats ragging as a serious offence and provides for disciplinary action. If you experience or witness it, contact the college’s Anti-Ragging or Student Welfare office immediately.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_library_hours_2024",
+    "title": "Library hours in 2024–25 rules",
+    "category": "regulations_faq",
+    "keywords": [
+      "What time does the library open?",
+      "Is the library open on weekends?",
+      "What are the library timings during exams?",
+      "Can I study in the library late?",
+      "Tell me Central Library hours"
+    ],
+    "answer": "The supplied 2024–25 rulebook lists different Central Library hours for weekdays, weekends, and examinations. Timings may have changed, so check the library notice or website before visiting.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_health_centre_hours_2024",
+    "title": "Health Centre hours in 2024–25 rules",
+    "category": "regulations_faq",
+    "keywords": [
+      "When is the campus Health Centre open?",
+      "What are the medical centre timings?",
+      "Can I visit the Health Centre on weekends?",
+      "Where can I get medical help on campus?",
+      "Is there a campus clinic at SIT?"
+    ],
+    "answer": "The supplied 2024–25 rulebook lists Health Centre hours, but those timings may change. Please call or check the current campus notice before you go; for an emergency, contact campus staff immediately.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_drop_withdrawal",
+    "title": "Course drop or withdrawal",
+    "category": "regulations_faq",
+    "keywords": [
+      "How do I drop a course?",
+      "Can I withdraw from a subject?",
+      "What is the course withdrawal process?",
+      "Who approves a course drop?",
+      "When should I apply to withdraw from a course?"
+    ],
+    "answer": "Course drop and withdrawal require the formal process described in your programme rules. Deadlines vary by semester, so speak to your Faculty Advisor or Academic Office before submitting a request.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_exam_eligibility",
+    "title": "Eligibility for semester examinations",
+    "category": "regulations_faq",
+    "keywords": [
+      "How do I check if I can write SEE?",
+      "What makes a student eligible for semester exams?",
+      "Can attendance affect exam eligibility?",
+      "Who checks exam eligibility?",
+      "What should I check before SEE?"
+    ],
+    "answer": "Attendance and course requirements affect eligibility for the SEE under the 2024–25 rules. Check your attendance and registration status with the department well before the exam timetable.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_academic_discipline",
+    "title": "Academic discipline and dues",
+    "category": "regulations_faq",
+    "keywords": [
+      "Can pending dues affect graduation?",
+      "What if I have an institute fee hold?",
+      "How do I clear an academic hold?",
+      "Can disciplinary cases delay my degree?",
+      "Which office can help me resolve pending dues?"
+    ],
+    "answer": "The supplied rulebook lists pending disciplinary proceedings and unpaid institute dues among matters that can affect degree completion. Contact the relevant office early if you need to resolve a hold.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "rule_programme_duration",
+    "title": "Programme duration limits",
+    "category": "regulations_faq",
+    "keywords": [
+      "How long do I have to finish my degree?",
+      "What is the maximum duration for my course?",
+      "How many years can I take to complete B.E.?",
+      "Does lateral entry have a different duration?",
+      "What is the time limit to complete a programme?"
+    ],
+    "answer": "The 2024–25 rulebook lists normal and maximum completion periods that differ by programme, including lateral-entry routes. Tell me your exact course and entry route, or check your batch regulations for the applicable limit.",
+    "sources": [
+      "SIT Rules & Regulations 2024-25"
+    ]
+  },
+  {
+    "id": "dept_facilities_21",
+    "title": "Architecture Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Architecture",
+      "architecture",
+      "b arch",
+      "barch",
+      "What labs are available in Architecture?",
+      "What facilities does the Architecture department have?",
+      "Tell me about Architecture department labs",
+      "Does SIT Architecture have project labs?",
+      "What equipment can students use in Architecture?"
+    ],
+    "answer": "The published profile lists design studios, a computer lab, climatology and art labs, model-making space, a materials museum, and a construction yard. Ask the department to confirm current access and equipment.",
+    "sources": [
+      "https://sit.ac.in/architecture/"
+    ]
+  },
+  {
+    "id": "dept_facilities_22",
+    "title": "Artificial Intelligence and Data Science Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Artificial Intelligence and Data Science",
+      "ai ds",
+      "aids",
+      "artificial intelligence and data science",
+      "What labs are available in Artificial Intelligence and Data Science?",
+      "What facilities does the Artificial Intelligence and Data Science department have?",
+      "Tell me about Artificial Intelligence and Data Science department labs",
+      "Does SIT Artificial Intelligence and Data Science have project labs?",
+      "What equipment can students use in Artificial Intelligence and Data Science?"
+    ],
+    "answer": "The published profile mentions computing infrastructure and innovation-lab space. For a current equipment list or student access details, please check with the department.",
+    "sources": [
+      "https://sit.ac.in/artificial-intelligence-and-data-science/"
+    ]
+  },
+  {
+    "id": "dept_facilities_23",
+    "title": "Biotechnology Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Biotechnology",
+      "biotechnology",
+      "biotech",
+      "What labs are available in Biotechnology?",
+      "What facilities does the Biotechnology department have?",
+      "Tell me about Biotechnology department labs",
+      "Does SIT Biotechnology have project labs?",
+      "What equipment can students use in Biotechnology?"
+    ],
+    "answer": "The published profile lists facilities such as GPU workstations, HPLC, RT-PCR, a UV spectrophotometer, and a 20-litre fermenter. Ask the department to confirm which equipment is currently available for student projects.",
+    "sources": [
+      "https://sit.ac.in/biotechnology/"
+    ]
+  },
+  {
+    "id": "dept_facilities_24",
+    "title": "Chemical Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Chemical Engineering",
+      "chemical engineering",
+      "chemical",
+      "What labs are available in Chemical Engineering?",
+      "What facilities does the Chemical Engineering department have?",
+      "Tell me about Chemical Engineering department labs",
+      "Does SIT Chemical Engineering have project labs?",
+      "What equipment can students use in Chemical Engineering?"
+    ],
+    "answer": "The department profile describes research and teaching facilities, but the full current equipment list should be confirmed directly with the department. Staff can also tell you which labs are open to your course and year.",
+    "sources": [
+      "https://sit.ac.in/chemical-engineering-2/"
+    ]
+  },
+  {
+    "id": "dept_facilities_25",
+    "title": "Chemistry Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Chemistry",
+      "chemistry",
+      "What labs are available in Chemistry?",
+      "What facilities does the Chemistry department have?",
+      "Tell me about Chemistry department labs",
+      "Does SIT Chemistry have project labs?",
+      "What equipment can students use in Chemistry?"
+    ],
+    "answer": "I don’t have a verified current lab and equipment list for Chemistry in the project data. Please check the department page or ask the department office for its latest facilities.",
+    "sources": [
+      "https://sit.ac.in/chemistry/"
+    ]
+  },
+  {
+    "id": "dept_facilities_26",
+    "title": "Civil Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Civil Engineering",
+      "civil engineering",
+      "civil",
+      "What labs are available in Civil Engineering?",
+      "What facilities does the Civil Engineering department have?",
+      "Tell me about Civil Engineering department labs",
+      "Does SIT Civil Engineering have project labs?",
+      "What equipment can students use in Civil Engineering?"
+    ],
+    "answer": "The published profile lists areas including structural, geotechnical, fluid mechanics, and transportation engineering labs. Contact the department for current equipment and project access.",
+    "sources": [
+      "https://sit.ac.in/civil-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_27",
+    "title": "Computer Science and Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Computer Science and Engineering",
+      "computer science and engineering",
+      "computer science",
+      "cse",
+      "What labs are available in Computer Science and Engineering?",
+      "What facilities does the Computer Science and Engineering department have?",
+      "Tell me about Computer Science and Engineering department labs",
+      "Does SIT Computer Science and Engineering have project labs?",
+      "What equipment can students use in Computer Science and Engineering?"
+    ],
+    "answer": "The profile lists multiple computing labs, including Aryabhata Computer Centre, Linux Lab, Project Lab, and research facilities. The department can confirm current software, lab schedules, and student access.",
+    "sources": [
+      "https://sit.ac.in/computer-science/"
+    ]
+  },
+  {
+    "id": "dept_facilities_28",
+    "title": "CSE Artificial Intelligence and Machine Learning Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "CSE Artificial Intelligence and Machine Learning",
+      "cse ai ml",
+      "cse aiml",
+      "artificial intelligence and machine learning",
+      "aiml",
+      "What labs are available in CSE Artificial Intelligence and Machine Learning?",
+      "What facilities does the CSE Artificial Intelligence and Machine Learning department have?",
+      "Tell me about CSE Artificial Intelligence and Machine Learning department labs",
+      "Does SIT CSE Artificial Intelligence and Machine Learning have project labs?",
+      "What equipment can students use in CSE Artificial Intelligence and Machine Learning?"
+    ],
+    "answer": "Please check the department page or office for a current list of facilities and student access.",
+    "sources": [
+      "https://sit.ac.in/cse-artificial-intelligence-machine-learning/"
+    ]
+  },
+  {
+    "id": "dept_facilities_29",
+    "title": "Electrical and Electronics Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Electrical and Electronics Engineering",
+      "electrical and electronics engineering",
+      "electrical electronics",
+      "eee",
+      "What labs are available in Electrical and Electronics Engineering?",
+      "What facilities does the Electrical and Electronics Engineering department have?",
+      "Tell me about Electrical and Electronics Engineering department labs",
+      "Does SIT Electrical and Electronics Engineering have project labs?",
+      "What equipment can students use in Electrical and Electronics Engineering?"
+    ],
+    "answer": "The published profile lists Power Electronics and Drives, High Voltage and Insulation, and Electrical Machines labs. Check with the department for current equipment and lab timings.",
+    "sources": [
+      "https://sit.ac.in/electrical-and-electronics-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_30",
+    "title": "Electronics and Communication Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Electronics and Communication Engineering",
+      "electronics and communication engineering",
+      "electronics communication",
+      "ece",
+      "What labs are available in Electronics and Communication Engineering?",
+      "What facilities does the Electronics and Communication Engineering department have?",
+      "Tell me about Electronics and Communication Engineering department labs",
+      "Does SIT Electronics and Communication Engineering have project labs?",
+      "What equipment can students use in Electronics and Communication Engineering?"
+    ],
+    "answer": "The department profile mentions the CNR Rao Lab, JC Bose Computer Centre, and electronics and communication facilities. The department can confirm the current lab list and student access.",
+    "sources": [
+      "https://sit.ac.in/electronics-and-communication-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_31",
+    "title": "Electronics and Instrumentation Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Electronics and Instrumentation Engineering",
+      "electronics and instrumentation engineering",
+      "electronics instrumentation",
+      "eie",
+      "What labs are available in Electronics and Instrumentation Engineering?",
+      "What facilities does the Electronics and Instrumentation Engineering department have?",
+      "Tell me about Electronics and Instrumentation Engineering department labs",
+      "Does SIT Electronics and Instrumentation Engineering have project labs?",
+      "What equipment can students use in Electronics and Instrumentation Engineering?"
+    ],
+    "answer": "The profile lists embedded systems, DSP, virtual instrumentation, process instrumentation and automation, and circuit labs. Ask the department which facilities are available for your course or project.",
+    "sources": [
+      "https://sit.ac.in/electronics-and-instrumental-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_32",
+    "title": "Electronics and Telecommunication Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Electronics and Telecommunication Engineering",
+      "electronics and telecommunication engineering",
+      "electronics telecommunication",
+      "ete",
+      "What labs are available in Electronics and Telecommunication Engineering?",
+      "What facilities does the Electronics and Telecommunication Engineering department have?",
+      "Tell me about Electronics and Telecommunication Engineering department labs",
+      "Does SIT Electronics and Telecommunication Engineering have project labs?",
+      "What equipment can students use in Electronics and Telecommunication Engineering?"
+    ],
+    "answer": "The profile describes facilities for areas such as 5G, IoT, VLSI, embedded systems, signal processing, and RF/microwave work. Please confirm current equipment and access with the department.",
+    "sources": [
+      "https://sit.ac.in/electronics-and-telecommunication-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_33",
+    "title": "Industrial Engineering and Management Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Industrial Engineering and Management",
+      "industrial engineering and management",
+      "industrial engineering",
+      "iem",
+      "What labs are available in Industrial Engineering and Management?",
+      "What facilities does the Industrial Engineering and Management department have?",
+      "Tell me about Industrial Engineering and Management department labs",
+      "Does SIT Industrial Engineering and Management have project labs?",
+      "What equipment can students use in Industrial Engineering and Management?"
+    ],
+    "answer": "The published profile lists facilities for metrology, work study, quality engineering, manufacturing processes, and computing. Contact the department for current lab schedules and equipment details.",
+    "sources": [
+      "https://sit.ac.in/industrial-engineering-and-management/"
+    ]
+  },
+  {
+    "id": "dept_facilities_34",
+    "title": "Information Science and Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Information Science and Engineering",
+      "information science and engineering",
+      "information science",
+      "ise",
+      "What labs are available in Information Science and Engineering?",
+      "What facilities does the Information Science and Engineering department have?",
+      "Tell me about Information Science and Engineering department labs",
+      "Does SIT Information Science and Engineering have project labs?",
+      "What equipment can students use in Information Science and Engineering?"
+    ],
+    "answer": "The profile names computer centres and labs including Vasudha, Panini, and Kautilya. Ask the department about current lab availability, software, and project support.",
+    "sources": [
+      "https://sit.ac.in/information-science-and-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_35",
+    "title": "Mathematics Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Mathematics",
+      "mathematics",
+      "maths",
+      "math",
+      "What labs are available in Mathematics?",
+      "What facilities does the Mathematics department have?",
+      "Tell me about Mathematics department labs",
+      "Does SIT Mathematics have project labs?",
+      "What equipment can students use in Mathematics?"
+    ],
+    "answer": "I don’t have a verified current laboratory inventory for Mathematics in the project data. Please check the department page or ask its office about computing or research facilities.",
+    "sources": [
+      "https://sit.ac.in/mathematics/"
+    ]
+  },
+  {
+    "id": "dept_facilities_36",
+    "title": "Mechanical Engineering Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Mechanical Engineering",
+      "mechanical engineering",
+      "mechanical",
+      "mech",
+      "What labs are available in Mechanical Engineering?",
+      "What facilities does the Mechanical Engineering department have?",
+      "Tell me about Mechanical Engineering department labs",
+      "Does SIT Mechanical Engineering have project labs?",
+      "What equipment can students use in Mechanical Engineering?"
+    ],
+    "answer": "The department profile describes laboratories for teaching, projects, and research, but I can’t confirm a reliable current equipment list from the stored data. Ask the department for the latest lab catalogue and access rules.",
+    "sources": [
+      "https://sit.ac.in/mechanical-engineering/"
+    ]
+  },
+  {
+    "id": "dept_facilities_37",
+    "title": "Master of Business Administration Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Master of Business Administration",
+      "master of business administration",
+      "mba",
+      "What labs are available in Master of Business Administration?",
+      "What facilities does the Master of Business Administration department have?",
+      "Tell me about Master of Business Administration department labs",
+      "Does SIT Master of Business Administration have project labs?",
+      "What equipment can students use in Master of Business Administration?"
+    ],
+    "answer": "Please check the department page or office for a current list of facilities and student access.",
+    "sources": [
+      "https://sit.ac.in/master-of-business-administration/"
+    ]
+  },
+  {
+    "id": "dept_facilities_38",
+    "title": "Master of Computer Applications Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Master of Computer Applications",
+      "master of computer applications",
+      "master of computer application",
+      "mca",
+      "What labs are available in Master of Computer Applications?",
+      "What facilities does the Master of Computer Applications department have?",
+      "Tell me about Master of Computer Applications department labs",
+      "Does SIT Master of Computer Applications have project labs?",
+      "What equipment can students use in Master of Computer Applications?"
+    ],
+    "answer": "Please check the department page or office for a current list of facilities and student access.",
+    "sources": [
+      "https://sit.ac.in/master-of-computer-application/"
+    ]
+  },
+  {
+    "id": "dept_facilities_39",
+    "title": "Physics Department Labs and Facilities",
+    "category": "department_faq",
+    "keywords": [
+      "Physics",
+      "physics",
+      "What labs are available in Physics?",
+      "What facilities does the Physics department have?",
+      "Tell me about Physics department labs",
+      "Does SIT Physics have project labs?",
+      "What equipment can students use in Physics?"
+    ],
+    "answer": "I don’t have a verified current lab inventory for Physics in the project data. Please check the department page or ask the department office for its latest facilities.",
+    "sources": [
+      "https://sit.ac.in/physics/"
     ]
   }
 ]

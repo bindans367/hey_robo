@@ -301,7 +301,14 @@ class KnowledgeMatcher:
         best_score, best_item = scored_results[0] if scored_results else (0.0, None)
         # A human-authored correction in the dashboard overrides the scraped
         # department profile when it answers the same kind of question.
-        if department_result and not (best_item and best_item.get("updated_at") and best_score >= 60.0):
+        curated_department_faq = bool(
+            best_item
+            and best_item.get("category") == "department_faq"
+            and best_score >= 60.0
+        )
+        if department_result and not curated_department_faq and not (
+            best_item and best_item.get("updated_at") and best_score >= 60.0
+        ):
             return department_result
         site_result = self._search_website_corpus(query_norm)
         # Prefer the reviewed, conversational FAQ whenever it has a solid

@@ -28,6 +28,7 @@ import time
 import wave
 import xml.sax.saxutils as xml_utils
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 import pyttsx3
 import numpy as np
@@ -244,25 +245,26 @@ def _load_tts_settings():
         with open(path, "r", encoding="utf-8") as f:
             settings = json.load(f)
         voice = settings.get("voice", {})
-        provider = voice.get("provider", "edge")
-        voice_id = str(voice.get("voice_id", "Kore" if provider == "gemini" else "en-IN-NeerjaNeural"))
-        if provider == "gemini":
-            allowed = {"Kore", "Puck", "Charon", "Aoede", "Fenrir", "Leda", "Orus", "Zephyr", "Callirrhoe", "Autonoe", "Enceladus", "Iapetus", "Umbriel", "Algieba", "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"}
-            if voice_id not in allowed:
-                voice_id = "Kore"
-        elif not re.fullmatch(r"en-IN-[A-Za-z]+Neural", voice_id):
-            voice_id = "en-IN-NeerjaNeural"
+        provider = "edge"
+        voice_id = "en-IN-NeerjaNeural"
         online = settings.get("online", {})
+        online_host = (urlparse(str(online.get("base_url") or "")).hostname or "").lower()
+        gemini_tts_key = (
+            str(online.get("transcription_api_key") or "").strip()
+            or os.environ.get("GEMINI_API_KEY", "").strip()
+            or (str(online.get("api_key") or "").strip()
+                if online_host == "generativelanguage.googleapis.com" else "")
+        )
         return {
-            "gender": voice.get("gender", "female"),
-            "name": str(voice.get("name", "")).strip().lower(),
-            "provider": provider if provider in ("edge", "system", "gemini") else "edge",
+            "gender": "female",
+            "name": voice_id.lower(),
+            "provider": provider,
             "voice_id": voice_id,
-            "style": voice.get("style", "indian_clear"),
+            "style": "indian_clear",
             "speed": max(.65, min(1.4, float(voice.get("speed", 1.0)))),
             "pitch": max(-10, min(10, int(voice.get("pitch", 0)))),
             "volume": max(0, min(100, int(voice.get("volume", 100)))),
-            "api_key": str(online.get("transcription_api_key") or os.environ.get("GEMINI_API_KEY") or online.get("api_key", "")).strip(),
+            "api_key": gemini_tts_key,
             "tts_model": str(online.get("tts_model", "gemini-3.8-flash-tts")).strip() or "gemini-3.8-flash-tts",
         }
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
@@ -518,7 +520,9 @@ def speak(text: str, log_callback=None):
                 return result
             except Exception as edge_error:
                 fallback_reason = str(edge_error)
-                print(f"[TTS WARN] {settings['voice_id']} unavailable; using the installed system voice: {edge_error}", file=sys.stderr)
+                _set_tts_status(settings, "unavailable", fallback_reason)
+                print(f"[TTS ERROR] Fixed Indian English voice unavailable: {edge_error}", file=sys.stderr)
+                return False
         if _sapi_voice is not None:
             _apply_sapi_settings(settings)
             if settings["pitch"]:
