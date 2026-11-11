@@ -3,7 +3,7 @@ services:
     name: hey-robo-brain
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements-render.txt
+    buildCommand: pip install -r requirements-render.txt && python build_knowledge.py
     startCommand: python robo_brain.py
     autoDeployTrigger: commit
     healthCheckPath: /api/health
